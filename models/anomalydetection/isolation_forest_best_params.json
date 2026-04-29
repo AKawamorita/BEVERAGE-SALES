@@ -1,0 +1,6 @@
+{
+    "model__contamination": 0.01,
+    "model__max_features": 1.0,
+    "model__max_samples": 512,
+    "model__n_estimators": 100
+}

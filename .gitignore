@@ -6,6 +6,16 @@ __pycache__/
 # C extensions
 *.so
 
+# venv 
+_venv/
+
+# Data
+*.parquet
+*.csv
+
+# Extension
+*.exe
+
 # Distribution / packaging
 .Python
 build/

@@ -1,0 +1,45 @@
+{
+    "best_params": {
+        "model__colsample_bytree": 0.8,
+        "model__learning_rate": 0.08,
+        "model__max_depth": -1,
+        "model__min_child_samples": 20,
+        "model__n_estimators": 200,
+        "model__num_leaves": 63,
+        "model__subsample": 0.8
+    },
+    "best_score": -4.472950807103165,
+    "scoring": "neg_root_mean_squared_error",
+    "n_splits": 3,
+    "target_col": "quantity_sum",
+    "numeric_features": [
+        "total_price_sum",
+        "unit_price_mean",
+        "discount_mean",
+        "order_count",
+        "customer_count",
+        "avg_ticket",
+        "day_of_week",
+        "month",
+        "is_weekend",
+        "quantity_sum_mean_7d",
+        "quantity_sum_std_7d",
+        "quantity_sum_sum_7d",
+        "total_price_sum_mean_7d",
+        "total_price_sum_std_7d",
+        "total_price_sum_mean_30d",
+        "unit_price_mean_mean_7d",
+        "discount_mean_mean_14d",
+        "quantity_vs_mean_7d",
+        "total_price_vs_mean_30d",
+        "quantity_pct_vs_mean_7d",
+        "history_less_than_7d",
+        "history_less_than_30d",
+        "anomaly_score",
+        "anomaly_flag"
+    ],
+    "categorical_features": [
+        "Product",
+        "Region"
+    ]
+}
