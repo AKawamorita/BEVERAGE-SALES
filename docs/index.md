@@ -5,6 +5,9 @@
 
 ![main cities and products consumed](img/MAP_P40.png)
 
+## Dataset
+<br><small>https://www.kaggle.com/datasets/sebastianwillmann/beverage-sales</small>
+
 ## Overview
 
 This project explores a **Beverage Sales** dataset and builds a structured analytics and machine learning workflow focused on:
