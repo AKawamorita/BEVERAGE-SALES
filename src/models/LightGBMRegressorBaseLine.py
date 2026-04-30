@@ -463,3 +463,9 @@ class LightGBMRegressorBaseLine:
 
         if missing_cols:
             raise ValueError(f"Missing required columns: {missing_cols}")
+        
+    def get_model(self):
+        """
+        Return the internal trained model.
+        """
+        return self.model

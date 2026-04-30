@@ -10,39 +10,7 @@ def DataFeatures(
     min_periods: int = 1,
     fill_missing_days: bool = True
 ) -> pd.DataFrame:
-    """
-    Cria features temporais com sliding window para um dataset de vendas.
-
-    Parâmetros
-    ----------
-    df : pd.DataFrame
-        DataFrame original contendo as colunas:
-        Order_ID, Customer_ID, Customer_Type, Product, Category, Unit_Price,
-        Quantity, Discount, Total_Price, Region, Order_Date
-
-    date_col : str, default="Order_Date"
-        Nome da coluna de data.
-
-    group_cols : list, default=["Product", "Region"]
-        Granularidade para cálculo das janelas.
-        Ex.: ["Product", "Region"], ["Product"], ["Category", "Region"].
-
-    windows : tuple, default=(7, 14, 30)
-        Janelas móveis em dias.
-
-    min_periods : int, default=1
-        Número mínimo de observações na janela para calcular a métrica.
-
-    fill_missing_days : bool, default=True
-        Se True, cria datas faltantes dentro de cada grupo para permitir
-        rolling diário contínuo.
-
-    Retorno
-    -------
-    pd.DataFrame
-        DataFrame agregado por dia e por grupo, contendo novas features temporais.
-    """
-
+    
     if group_cols is None:
         group_cols = ["Product", "Region"]
 

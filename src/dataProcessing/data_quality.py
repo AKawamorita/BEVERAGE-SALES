@@ -3,23 +3,6 @@ import numpy as np
 
 
 class DataQuality:
-    """
-    Classe para análise e correção de qualidade de dados em datasets de vendas de bebidas.
-
-    Objetivos:
-    - Analisar problemas de qualidade de dados
-    - Gerar report profissional com status e volume de inconsistências
-    - Aplicar correções de forma controlada
-    - Manter funções de análise e correção separadas
-
-    Regras avaliadas:
-    - Quantity: valores nulos ou negativos
-    - Discount: valores nulos, negativos ou acima de 1
-    - Customer_Type: validação da regra B2B/B2C
-    - Order_Date: parsing e datas inválidas
-    - Total_Price: consistência com preço, quantidade e desconto
-    - Duplicatas exatas
-    """
 
     def __init__(self, df: pd.DataFrame):
         self.original_df = df.copy()

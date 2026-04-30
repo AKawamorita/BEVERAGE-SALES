@@ -1,0 +1,57 @@
+site_name: Beverage Sales
+site_description: Documentation for the Beverage Sales project
+site_author: Alexandre Kawamorita
+site_url: ""
+
+theme:
+  name: material
+  language: en
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src] 
+  - mkdocs-jupyter     
+
+nav:
+  - Home: index.md
+  - Documentation: documentation.md
+  - Notebooks: notebooks.md
+  - Loaders:
+      - Text Loader: TextLoader.md
+      - CSV Loader: CSVLoader.md
+  - Data:
+      - DataQuality Class: data_quality.md
+      - Data Features: DataFeatures.md 
+      - Data Quality Features: DataQualityFeatures.md
+  - Models:
+      - Isolation Forest Analyzer: IsolationForestAnalyzer.md
+      - LightGBM Regressor Models: LightGBMRegressorModels.md
+  - Repository:
+      - Parquet Repository: ParquetRepository.md    
+  - XAI:
+      - LightGBMShapInterpreter.md
+  - Results:
+      - results.md
+      - shap_results_analysis.md
+
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+
+plugins:
+  - search
+
+extra:
+  generator: false

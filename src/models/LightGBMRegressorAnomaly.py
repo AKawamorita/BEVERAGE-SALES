@@ -441,7 +441,7 @@ class LightGBMRegressorAnomaly:
         ----------
         model_path : str
             Path of the saved joblib model.
-        """
+        """        
         self.best_model = joblib.load(model_path)
 
     def _validate_dataframe(self, df: pd.DataFrame) -> None:
@@ -463,3 +463,23 @@ class LightGBMRegressorAnomaly:
 
         if missing_cols:
             raise ValueError(f"Missing required columns: {missing_cols}")
+        
+
+    def get_model(self):
+        """
+        Return the internal tree model used for prediction.
+        If the saved object is a Pipeline, return its final estimator.
+        """
+        if self.best_model is None:
+            raise ValueError("The internal model is not trained or was not loaded.")
+
+        if isinstance(self.best_model, Pipeline):
+            return self.best_model.steps[-1][1]
+
+        return self.best_model
+
+    def get_model_type(self):
+        """
+        Return the type of the internal trained model.
+        """
+        return type(self.get_model())

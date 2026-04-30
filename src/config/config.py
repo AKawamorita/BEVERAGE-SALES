@@ -18,9 +18,4 @@ MODELS_ANOMALYD = ROOT_DIR / "models" / "anomalydetection"
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
 
-TARGET_COLUMN = "RUL"
-
-HEALTHY_THRESHOLD = 0.7
-WARNING_THRESHOLD = 0.4
-
 HI_FEATURES = ["s3_std", "s3_var", "s4_shape_factor"]
