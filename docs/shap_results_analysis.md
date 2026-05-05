@@ -34,6 +34,8 @@ This means that the anomaly signal was **not a main global driver** of the model
 
 At first sight, this suggests that the unsupervised anomaly signal played a **complementary role**, while the main predictive power came from temporal and operational features.
 
+![Dependence plot](img/Dependence_Plot.png)
+
 ##### Result
 ```text
                               feature  mean_abs_shap

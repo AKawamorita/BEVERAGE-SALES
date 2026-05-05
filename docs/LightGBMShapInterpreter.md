@@ -243,12 +243,12 @@ This means the feature names and values may be different from the original raw d
 ### Sparse to dense conversion
 
 If the transformed matrix is sparse, the class converts it to a dense array before building a pandas DataFrame.  
-This is practical for explanation, but it may use more memory for very large datasets. fileciteturn8file0
+This is practical for explanation, but it may use more memory for very large datasets. 
 
 ### SHAP output format
 
 Depending on the SHAP version and model behavior, SHAP values may come as a list or as a numeric array.  
-The class already handles this case when calculating mean absolute feature importance. fileciteturn8file0
+The class already handles this case when calculating mean absolute feature importance. 
 
 ---
 

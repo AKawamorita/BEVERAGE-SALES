@@ -57,15 +57,24 @@ This project was created to answer questions such as:
 
 ## Project Structure
 
-The project was organized as a notebook pipeline. The recommended execution order is:
+##### ⚙️The project follows this logic:
+**raw data -> data quality -> feature engineering -> anomaly detection -> baseline model -> hybrid model -> performance benchmarking**<br>
 
-1. `data_loading.ipynb`
-2. `data_quality.ipynb`
-3. `feature_engineering.ipynb`
-4. `anomaly_detection.ipynb`
-5. `BaseLine.ipynb`
-6. `HybridModel.ipynb`
-7. `performance_benchmarking.ipynb`
+##### ⚙️Execution order
+The project was organized as a notebook pipeline. The recommended execution order is:<br>
+📝01_data_loading.ipynb -> 📝02_data_quality.ipynb -> 📝03_feature_engineering.ipynb -> 📝04_anomaly_detection.ipynb -> <br>
+📝05_BaseLine.ipynb -> 📝06_HybridModel.ipynb -> 📝07_Interpretability_SHAP_Analysis.ipynb -> 📝08_performance_benchmarking.ipynb <br>
+
+Suggested execution order:
+
+1. `01_data_loading.ipynb`
+2. `02_data_quality.ipynb`
+3. `03_feature_engineering.ipynb`
+4. `04_anomaly_detection.ipynb`
+5. `05_BaseLine.ipynb`
+6. `06_HybridModel.ipynb`
+7. `07_Interpretability_SHAP_Analysis.ipynb`
+8. `08_performance_benchmarking.ipynb`
 
 ---
 
@@ -191,8 +200,23 @@ Builds the hybrid solution by combining anomaly-related information with supervi
 - comparison-ready outputs
 
 ---
+### 7. 'Interpretability_SHAP_Analysis.ipynb'
+**Purpose**  
+The main goal is to understand **why** the hybrid model makes its predictions and whether anomaly-related features, especially `anomaly_score`, have a real contribution to the final result.
 
-### 7. `performance_benchmarking.ipynb`
+**Main tasks**
+- gather baseline results
+- gather hybrid model results
+- Run SHAP analysis 
+
+**Output**
+- Summary Plot
+- Dependence Plot for `anomaly_score`
+- Global feature importance
+- Waterfall plots for critical cases
+
+---
+### 8. `performance_benchmarking.ipynb`
 
 **Purpose**  
 Consolidates results and compares the final performance of the modeling approaches.

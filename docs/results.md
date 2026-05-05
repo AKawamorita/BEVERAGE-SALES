@@ -1,4 +1,4 @@
-# Beverage Sales - Test Set Analysis by Anomaly Segment
+# Analysis by Anomaly Segment
 
 
 ![Model Comparison](img/ModelComparison45.png)
@@ -170,30 +170,6 @@ That makes the project stronger, not weaker.
 
 A realistic project does not need perfect results.  
 It needs clear reasoning, transparent evaluation, and a solid understanding of model behavior.
-
----
-
-## Suggested Summary for GitHub or Documentation
-
-> On the test set, the anomaly-aware model showed small but consistent improvements for the regular majority segment (`anomaly_flag = 0`), reducing MAE, RMSE, median absolute error, and maximum error.  
-> For the anomalous minority segment (`anomaly_flag = 1`), the results were mixed: the median absolute error improved, but MAE and RMSE slightly worsened.  
-> Since anomalous records represent less than 1% of the test set, the global evaluation is strongly influenced by regular observations.  
-> In addition, because the dataset is synthetic, a high R² should be interpreted carefully, as synthetic data often contains cleaner and more predictable patterns than real-world data.
-
----
-
-## Final Assessment
-
-From a portfolio perspective, this is a good result to present because it supports a more professional discussion:
-
-- the anomaly-aware approach brings measurable value
-- the gain is concentrated in the normal segment
-- the anomaly segment remains difficult
-- the evaluation is honest and technically grounded
-
-This shows a stronger level of analysis than simply saying the model is better.
-
----
 
 ## Business Perspective
 
