@@ -2,8 +2,10 @@ import json
 import joblib
 import pandas as pd
 import numpy as np
-
 from pathlib import Path
+import shutil
+import json
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
 from sklearn.model_selection import KFold, GridSearchCV
@@ -483,3 +485,87 @@ class LightGBMRegressorAnomaly:
         Return the type of the internal trained model.
         """
         return type(self.get_model())
+  
+    def promote_model_to_production(
+        lgbm_source_path: str,
+        isolation_forest_source_path: str,
+        production_dir: str,
+        model_version: str,
+        target: str = "quantity_sum",
+        training_period: str = "2021-2022",
+        test_period: str = "2023",
+    ):
+        """
+        Copies trained model artifacts to the production folder and creates
+        a metadata JSON file describing the complete inference solution.
+        """
+
+        production_path = Path(production_dir)
+        production_path.mkdir(parents=True, exist_ok=True)
+
+        lgbm_dest_name = f"lgbm_model_{model_version}.joblib"
+        if_dest_name = f"isolation_forest_{model_version}.joblib"
+        metadata_dest_name = f"model_metadata_{model_version}.json"
+
+        lgbm_dest_path = production_path / lgbm_dest_name
+        if_dest_path = production_path / if_dest_name
+        metadata_dest_path = production_path / metadata_dest_name
+
+        shutil.copy2(lgbm_source_path, lgbm_dest_path)
+        shutil.copy2(isolation_forest_source_path, if_dest_path)
+
+        metadata = {
+            "solution_name": "Beverage Sales Hybrid Forecasting Model",
+            "solution_version": model_version,
+            "problem_type": "Demand forecasting with anomaly-aware features",
+            "target": target,
+            "training_period": training_period,
+            "test_period": test_period,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_by": "benchmark_notebook",
+
+            "artifacts": {
+                "supervised_model": lgbm_dest_name,
+                "anomaly_model": if_dest_name,
+                "metadata": metadata_dest_name
+            },
+
+            "baseline_model": {
+                "name": "LightGBM Regressor",
+                "description": "Baseline supervised model trained without anomaly features."
+            },
+
+            "hybrid_model": {
+                "name": "Isolation Forest + LightGBM Regressor",
+                "description": "Final model using anomaly_score and anomaly_flag as additional features."
+            },
+
+            "anomaly_model": {
+                "name": "Isolation Forest",
+                "role": "Detects unusual sales behavior and generates anomaly features used by the final supervised model.",
+                "output_features": [
+                    "anomaly_score",
+                    "anomaly_flag"
+                ]
+            },
+
+            "ml_model": {
+                "name": "LightGBM Regressor",
+                "role": "Predicts beverage sales demand using historical, temporal, price, discount, customer, and anomaly-based features."
+            },
+
+            "notes": [
+                "The API project should load these artifacts instead of retraining the models.",
+                "This metadata file is used for traceability, model versioning, and the /model-info endpoint."
+            ]
+        }
+
+        with open(metadata_dest_path, "w", encoding="utf-8") as file:
+            json.dump(metadata, file, indent=4, ensure_ascii=False)
+
+        return {
+            "production_dir": str(production_path),
+            "lgbm_model": str(lgbm_dest_path),
+            "isolation_forest": str(if_dest_path),
+            "metadata": str(metadata_dest_path)
+        }

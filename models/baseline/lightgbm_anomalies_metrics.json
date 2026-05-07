@@ -8,7 +8,7 @@
         "model__num_leaves": 63,
         "model__subsample": 0.8
     },
-    "best_score": -4.6530735449091445,
+    "best_score": -4.642765032995066,
     "scoring": "neg_root_mean_squared_error",
     "n_splits": 3,
     "target_col": "quantity_sum",

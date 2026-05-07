@@ -14,6 +14,7 @@ MODELS_BASELINE = ROOT_DIR / "models" / "baseline"
 MODELS_TUNED = ROOT_DIR / "models" / "tuned"
 MODELS_METRICS = ROOT_DIR / "models" / "metrics"
 MODELS_ANOMALYD = ROOT_DIR / "models" / "anomalydetection"
+MODELS_PRODUCTION = ROOT_DIR / "models" / "production"
 
 RANDOM_STATE = 42
 TEST_SIZE = 0.2

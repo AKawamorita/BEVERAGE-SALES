@@ -49,13 +49,14 @@ This project was created to answer questions such as:
 
 The project was organized as a notebook pipeline. The recommended execution order is:
 
-1. `data_loading.ipynb`
-2. `data_quality.ipynb`
-3. `feature_engineering.ipynb`
-4. `anomaly_detection.ipynb`
-5. `BaseLine.ipynb`
-6. `HybridModel.ipynb`
-7. `performance_benchmarking.ipynb`
+1. 01_data_loading.ipynb
+2. 02_data_quality.ipynb
+3. 03_feature_engineering.ipynb
+4. 04_anomaly_detection.ipynb
+5. 05_Baseline_Model.ipynb
+6. 06_Hybrid_Model.ipynb
+7. 07_Interpretability_SHAP_Analysis.ipynb
+8. 08_performance_benchmarking.ipynb
 
 ---
 

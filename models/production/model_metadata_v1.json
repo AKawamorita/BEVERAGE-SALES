@@ -1,0 +1,39 @@
+{
+    "solution_name": "Beverage Sales Hybrid Forecasting Model",
+    "solution_version": "v1",
+    "problem_type": "Demand forecasting with anomaly-aware features",
+    "target": "quantity_sum",
+    "training_period": "2021-2022",
+    "test_period": "2023",
+    "created_at": "2026-05-06T20:37:45.423558+00:00",
+    "created_by": "benchmark_notebook",
+    "artifacts": {
+        "supervised_model": "lgbm_model_v1.joblib",
+        "anomaly_model": "isolation_forest_v1.joblib",
+        "metadata": "model_metadata_v1.json"
+    },
+    "baseline_model": {
+        "name": "LightGBM Regressor",
+        "description": "Baseline supervised model trained without anomaly features."
+    },
+    "hybrid_model": {
+        "name": "Isolation Forest + LightGBM Regressor",
+        "description": "Final model using anomaly_score and anomaly_flag as additional features."
+    },
+    "anomaly_model": {
+        "name": "Isolation Forest",
+        "role": "Detects unusual sales behavior and generates anomaly features used by the final supervised model.",
+        "output_features": [
+            "anomaly_score",
+            "anomaly_flag"
+        ]
+    },
+    "ml_model": {
+        "name": "LightGBM Regressor",
+        "role": "Predicts beverage sales demand using historical, temporal, price, discount, customer, and anomaly-based features."
+    },
+    "notes": [
+        "The API project should load these artifacts instead of retraining the models.",
+        "This metadata file is used for traceability, model versioning, and the /model-info endpoint."
+    ]
+}

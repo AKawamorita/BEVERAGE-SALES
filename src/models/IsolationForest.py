@@ -4,6 +4,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import shap
 from pathlib import Path
 
 from datetime import datetime
@@ -509,6 +510,297 @@ class IsolationForestAnalyzer:
 
         plt.tight_layout()
         plt.show()
+
+
+    # =========================================================
+    # XAI / INTERPRETABILIDADE DO ISOLATION FOREST
+    # =========================================================
+    def transform_if_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Build the Isolation Forest feature matrix and apply the fitted preprocessing
+        steps (imputer and scaler), returning a DataFrame with aligned feature names.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Raw input dataframe containing the source business columns.
+
+        Returns
+        -------
+        pd.DataFrame
+            Transformed feature matrix used by the fitted Isolation Forest model.
+        """
+        self._check_is_fitted()
+
+        df_model = self.create_if_features(df)
+        X_raw = df_model[self.feature_cols_].copy()
+
+        imputer = self.best_estimator_.named_steps["imputer"]
+        scaler = self.best_estimator_.named_steps["scaler"]
+
+        X_imputed = imputer.transform(X_raw)
+        X_scaled = scaler.transform(X_imputed)
+
+        return pd.DataFrame(X_scaled, columns=self.feature_cols_, index=df.index)
+
+    def create_shap_explainer(self):
+        """
+        Create and return a SHAP TreeExplainer for the fitted Isolation Forest model.
+
+        Returns
+        -------
+        shap.TreeExplainer
+            SHAP explainer bound to the fitted tree model.
+        """
+        self._check_is_fitted()
+        model = self.best_estimator_.named_steps["model"]
+        return shap.TreeExplainer(model)
+
+    def compute_shap_values(self, df: pd.DataFrame):
+        """
+        Compute SHAP values for the fitted Isolation Forest using the transformed
+        anomaly feature matrix.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Raw input dataframe.
+
+        Returns
+        -------
+        tuple
+            (shap_values, X_transformed_df)
+        """
+        X_transformed_df = self.transform_if_features(df)
+        explainer = self.create_shap_explainer()
+        shap_values = explainer.shap_values(X_transformed_df)
+
+        return shap_values, X_transformed_df
+
+    @staticmethod
+    def _normalize_shap_array(shap_values):
+        """
+        Normalize SHAP output to a 2D numpy array.
+        """
+        if isinstance(shap_values, list):
+            shap_array = np.asarray(shap_values[0])
+        else:
+            shap_array = np.asarray(shap_values)
+
+        if shap_array.ndim == 1:
+            shap_array = shap_array.reshape(1, -1)
+
+        return shap_array
+
+    def plot_shap_summary(self, df: pd.DataFrame, plot_type: str = "dot") -> None:
+        """
+        Plot a SHAP summary chart for the Isolation Forest anomaly signals.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Raw input dataframe.
+        plot_type : str, default="dot"
+            SHAP summary plot type ("dot", "bar", etc.).
+        """
+        shap_values, X_transformed_df = self.compute_shap_values(df)
+        shap.summary_plot(shap_values, X_transformed_df, plot_type=plot_type)
+
+    def plot_shap_dependence(
+        self,
+        df: pd.DataFrame,
+        feature: str = "if_sales_signal",
+        interaction_index="auto"
+    ) -> None:
+        """
+        Plot a SHAP dependence plot for one anomaly signal.
+
+        This is useful to inspect threshold-like behavior, such as whether
+        very high sales deviation or quantity deviation starts pushing the
+        anomaly explanation more strongly.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Raw input dataframe.
+        feature : str, default="if_sales_signal"
+            Feature name used in the dependence plot.
+        interaction_index : str or int, default="auto"
+            SHAP interaction setting.
+        """
+        shap_values, X_transformed_df = self.compute_shap_values(df)
+
+        if feature not in X_transformed_df.columns:
+            raise ValueError(f"Feature '{feature}' not found. Available: {list(X_transformed_df.columns)}")
+
+        shap.dependence_plot(
+            feature,
+            shap_values,
+            X_transformed_df,
+            interaction_index=interaction_index
+        )
+
+    def get_anomaly_feature_importance(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Return global SHAP importance for the Isolation Forest anomaly signals.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Raw input dataframe.
+
+        Returns
+        -------
+        pd.DataFrame
+            Feature importance sorted by mean absolute SHAP value.
+        """
+        shap_values, X_transformed_df = self.compute_shap_values(df)
+        shap_array = self._normalize_shap_array(shap_values)
+
+        importance = pd.DataFrame({
+            "feature": X_transformed_df.columns,
+            "mean_abs_shap": np.abs(shap_array).mean(axis=0)
+        }).sort_values("mean_abs_shap", ascending=False)
+
+        return importance.reset_index(drop=True)
+
+    def explain_anomaly_drivers(
+        self,
+        df_pred: pd.DataFrame,
+        top_n: int = 10,
+        top_features: int = 2,
+        product_filter=None,
+        region_filter=None
+    ) -> pd.DataFrame:
+        """
+        Explain the strongest drivers behind the most severe anomalies.
+
+        The method computes SHAP values for the fitted Isolation Forest and
+        returns the top contributing anomaly signals for each selected row.
+
+        Parameters
+        ----------
+        df_pred : pd.DataFrame
+            DataFrame already enriched with anomaly_flag and anomaly_score.
+        top_n : int, default=10
+            Number of anomalies to explain.
+        top_features : int, default=2
+            Number of top local drivers to keep per anomaly.
+        product_filter : None, str, list, default=None
+            Optional product filter.
+        region_filter : None, str, list, default=None
+            Optional region filter.
+
+        Returns
+        -------
+        pd.DataFrame
+            Table with anomaly metadata and local explanation columns.
+        """
+        required_cols = ["anomaly_flag", "anomaly_score"]
+        self._validate_required_columns(df_pred, required_cols)
+
+        filtered_df = self.filter_dataframe(
+            df_pred,
+            product_filter=product_filter,
+            region_filter=region_filter
+        ).copy()
+
+        anomaly_df = (
+            filtered_df[filtered_df["anomaly_flag"] == 1]
+            .sort_values("anomaly_score", ascending=True)
+            .head(top_n)
+            .copy()
+        )
+
+        if anomaly_df.empty:
+            return anomaly_df
+
+        shap_values, X_transformed_df = self.compute_shap_values(anomaly_df)
+        shap_array = self._normalize_shap_array(shap_values)
+
+        explanation_rows = []
+        for row_pos, (idx, row) in enumerate(anomaly_df.iterrows()):
+            shap_row = shap_array[row_pos]
+            feature_row = X_transformed_df.loc[idx]
+
+            ranked_idx = np.argsort(np.abs(shap_row))[::-1][:top_features]
+            explanation = {
+                "row_index": idx,
+                "anomaly_score": row.get("anomaly_score", np.nan),
+                "anomaly_label": row.get("anomaly_label", "Anomaly")
+            }
+
+            for rank, feat_idx in enumerate(ranked_idx, start=1):
+                feat_name = X_transformed_df.columns[feat_idx]
+                explanation[f"top_driver_{rank}"] = feat_name
+                explanation[f"top_driver_{rank}_value"] = float(feature_row.iloc[feat_idx])
+                explanation[f"top_driver_{rank}_shap"] = float(shap_row[feat_idx])
+
+            for meta_col in ["Order_Date", "Product", "Region", "quantity_sum", "total_price_sum", "avg_ticket"]:
+                if meta_col in anomaly_df.columns:
+                    explanation[meta_col] = row[meta_col]
+
+            explanation_rows.append(explanation)
+
+        ordered_cols = [c for c in [
+            "row_index", "Order_Date", "Product", "Region",
+            "quantity_sum", "total_price_sum", "avg_ticket",
+            "anomaly_label", "anomaly_score"
+        ] if c in explanation_rows[0]]
+
+        dynamic_cols = []
+        for rank in range(1, top_features + 1):
+            dynamic_cols.extend([
+                f"top_driver_{rank}",
+                f"top_driver_{rank}_value",
+                f"top_driver_{rank}_shap"
+            ])
+
+        result = pd.DataFrame(explanation_rows)
+        final_cols = [c for c in ordered_cols + dynamic_cols if c in result.columns]
+        return result[final_cols]
+
+    def plot_force_for_anomaly(
+        self,
+        df_pred: pd.DataFrame,
+        row_index,
+        matplotlib: bool = True
+    ):
+        """
+        Plot a SHAP force plot for one anomaly row.
+
+        Parameters
+        ----------
+        df_pred : pd.DataFrame
+            DataFrame containing the row to explain.
+        row_index : int or label
+            Row index from df_pred.
+        matplotlib : bool, default=True
+            Use the matplotlib backend when possible.
+
+        Returns
+        -------
+        object
+            SHAP force plot object.
+        """
+        if row_index not in df_pred.index:
+            raise ValueError(f"Row index '{row_index}' not found in df_pred.")
+
+        row_df = df_pred.loc[[row_index]].copy()
+        shap_values, X_transformed_df = self.compute_shap_values(row_df)
+        shap_array = self._normalize_shap_array(shap_values)
+
+        explainer = self.create_shap_explainer()
+        expected_value = explainer.expected_value
+        if isinstance(expected_value, (list, np.ndarray)):
+            expected_value = np.asarray(expected_value).flatten()[0]
+
+        return shap.force_plot(
+            expected_value,
+            shap_array[0],
+            X_transformed_df.iloc[0],
+            matplotlib=matplotlib
+        )
 
     # =========================================================
     # RESUMO
