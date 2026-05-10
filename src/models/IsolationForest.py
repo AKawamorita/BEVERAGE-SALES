@@ -882,10 +882,10 @@ class IsolationForestAnalyzer:
 
         if file_name is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            file_name = f"isolation_forest_analyzer_{timestamp}.joblib"
+            file_name = f"isolation_forest_pipeline_{timestamp}.joblib"
 
         full_path = os.path.join(folder_path, file_name)
-        joblib.dump(self, full_path)
+        joblib.dump(self.best_estimator_, full_path)
 
         return full_path
 
