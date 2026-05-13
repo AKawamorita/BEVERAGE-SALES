@@ -16,6 +16,7 @@ plugins:
 
 nav:
   - Home: index.md
+  - Pagina principal (PtBr): IndexPtBr.md 
   - Documentacao (PTBR): documentation_ptbr.md
   - Documentation: documentation_eng.md
   - Venv & requeriments: venv_requirements_vscode.md
@@ -46,8 +47,6 @@ markdown_extensions:
   - footnotes
   - md_in_html
   - tables
-  - toc:
-      permalink: true
   - pymdownx.highlight
   - pymdownx.superfences
   - pymdownx.inlinehilite

@@ -47,9 +47,15 @@ This project was created to answer questions such as:
 
 ---
 
-## Notebook Execution Order
+##### ⚙️The project follows this logic:
+**raw data -> data quality -> feature engineering -> anomaly detection -> baseline model -> hybrid model -> performance benchmarking**<br>
 
-The project was organized as a notebook pipeline. The recommended execution order is:
+##### ⚙️Execution order
+The project was organized as a notebook pipeline. The recommended execution order is:<br>
+📝01_data_loading.ipynb -> 📝02_data_quality.ipynb -> 📝03_feature_engineering.ipynb -> 📝04_anomaly_detection.ipynb -> <br>
+📝05_BaseLine.ipynb -> 📝06_HybridModel.ipynb -> 📝07_Interpretability_SHAP_Analysis.ipynb -> 📝08_performance_benchmarking.ipynb <br>
+
+Suggested execution order:
 
 1. `01_data_loading.ipynb`
 2. `02_data_quality.ipynb`
@@ -57,7 +63,8 @@ The project was organized as a notebook pipeline. The recommended execution orde
 4. `04_anomaly_detection.ipynb`
 5. `05_BaseLine.ipynb`
 6. `06_HybridModel.ipynb`
-7. `07_performance_benchmarking.ipynb`
+7. `07_Interpretability_SHAP_Analysis.ipynb`
+8. `08_performance_benchmarking.ipynb`
 
 ---
 
