@@ -17,8 +17,6 @@ plugins:
 nav:
   - Home: index.md
   - Pagina principal (PtBr): IndexPtBr.md 
-  - Documentacao (PTBR): documentation_ptbr.md
-  - Documentation: documentation_eng.md
   - Venv & requeriments: venv_requirements_vscode.md
   - Notebooks: notebooks.md
   - Loaders:
