@@ -5,7 +5,7 @@
     "target": "quantity_sum",
     "training_period": "2021-2022",
     "test_period": "2023",
-    "created_at": "2026-05-13T18:33:44.002264+00:00",
+    "created_at": "2026-05-20T14:39:47.615158+00:00",
     "created_by": "benchmark_notebook",
     "artifacts": {
         "supervised_model": "lgbm_model_v1.joblib",

@@ -30,33 +30,7 @@ class TextLoader:
         df = pd.read_csv(file_path, sep=r"\s+", header=None)
         return df
 
-
-    def create_dataframe_old(self, run_folder, run_id, max_sensors=4):
-        files = sorted(glob.glob(os.path.join(run_folder, "*")))
-        print(f"\nRun: {run_id}")
-        print(f"Pasta: {run_folder}")
-        print(f"Qtd. arquivos encontrados: {len(files)}")
-
-        rows = []
-        for time_index, file_path in enumerate(files):
-            row = self._extract_features_from_file(
-                file_path=file_path,
-                run_id=run_id,
-                time_index=time_index,
-                max_sensors=max_sensors
-            )
-            rows.append(row)
-
-        print(f"Qtd. linhas geradas: {len(rows)}")
-
-        df_run = pd.DataFrame(rows)
-        print("Colunas do df_run:", df_run.columns.tolist())
-
-        max_time = df_run["time_index"].max()
-        df_run["RUL"] = max_time - df_run["time_index"]
-
-        return df_run
-    
+   
     def create_dataframe(self, run_folder, run_id, max_sensors=4):
         files = sorted(glob.glob(os.path.join(run_folder, "*")))
         print(f"\nRun: {run_id}")

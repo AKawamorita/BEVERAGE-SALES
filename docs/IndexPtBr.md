@@ -67,6 +67,15 @@ Suggested execution order:
 
 ---
 
+### Export parquet to API project
+
+Para finalizar o pipeline, um arquivo Parquet compactado é gerado para abastecer a API. Ele é necessário exclusivamente no projeto Beverage-Sales, já que a API utiliza dados históricos para responder às requisições devido à implementação da Janela Deslizante (Sliding Window)
+Localizacao (data/exports)
+- 📦`anomaly_predictions_api.parquet`
+
+![parquet schema](img/esquema_parquets.png)
+---
+
 ## Storytelling do Projeto
 
 ![main cities and products consumed](img/MAP_P40.png)

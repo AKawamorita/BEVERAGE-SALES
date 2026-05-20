@@ -18,33 +18,50 @@ from src.config.config import MODELS_ANOMALYD
 
 class IsolationForestAnalyzer:
     """
-    Classe para detecção de anomalias em dados agregados de vendas usando Isolation Forest.
+    Class for anomaly detection in aggregated sales data using Isolation Forest.
 
-    Objetivo
-    --------
-    Detectar observações anômalas com base em sinais derivados do comportamento
-    temporal e de negócio do dataframe.
+    Objective
+    ---------
+    To detect anomalous observations based on signals derived from temporal and business behavior within the dataframe.
 
-    Features utilizadas no modelo
-    -----------------------------
+    Features used in the model
+    --------------------------
     - if_qty_signal:
-        Desvio percentual da quantidade versus média móvel de 7 dias.
-        Origem: quantity_pct_vs_mean_7d
+        Percentage deviation of quantity versus the 7-day moving average.
+        Source: quantity_pct_vs_mean_7d
 
     - if_sales_signal:
-        Desvio do valor total versus média de 30 dias.
-        Origem: total_price_vs_mean_30d
+        Deviation of total value versus the 30-day average.
+        Source: total_price_vs_mean_30d
 
     - if_discount_signal:
-        Comportamento médio recente do desconto.
-        Origem: discount_mean_mean_14d
+        Recent average discount behavior.
+        Source: discount_mean_mean_14d
 
     - if_ticket_signal:
-        Ticket médio da observação.
-        Origem: avg_ticket
+        Average ticket of the observation.
+        Source: avg_ticket
+
+    Notes
+        -----
+        - Software Engineering & Architecture Notice: The current structure of this 
+          class combines model training and prediction logic with data visualization 
+          (plotting methods). This coupling does not align with clean architecture 
+          best practices. It is a known technical debt and will be refactored into 
+          separate modules in an upcoming version.
+
+        - Memory Error in GridSearchCV:
+          To avoid memory overflow, the cross-validation parameter (cv) was set to 3 (default).  
+          The notebook was executed on a Ryzen 7 processor with 32GB of RAM. If your 
+          machine has less memory, consider lowering this value to 2 or 1 in the 
+          initialization parameters of the "IsolationForestAnalyzer" class (located 
+          in the 'src/models' folder).
+         Error description: 
+         MemoryError: Unable to allocate 1.40 MiB for an array with shape (2, 182987) and data type int32
+
     """
 
-    def __init__(self, base_path: str = None, random_state=42, cv=3, n_jobs=-1, verbose=0):
+    def __init__(self, base_path: str = None, random_state=42, cv=3, n_jobs=3, verbose=0):
         self.random_state = random_state
         self.cv = cv
         self.n_jobs = n_jobs
@@ -85,11 +102,11 @@ class IsolationForestAnalyzer:
     @staticmethod
     def _normalize_filter_values(values):
         """
-        Normaliza filtros para lista.
-        Aceita:
+        Normalizes filters into a list.
+        Accepts:
         - None
-        - valor único: "Water"
-        - lista: ["Water", "Juices"]
+        - Single value: "Water"
+        - List: ["Water", "Juices"]
         """
         if values is None:
             return None
@@ -100,28 +117,28 @@ class IsolationForestAnalyzer:
     @staticmethod
     def _get_full_path(self, relative_path: str) -> Path:
         """
-        Constrói o caminho completo do arquivo.
+        Builds the full file path.
 
         Parameters
         ----------
         relative_path : str
-            Caminho relativo dentro do base_path.
+            Relative path inside the base_path.
 
         Returns
         -------
         Path
-            Caminho completo do arquivo.
+            Full file path.
         """
         return self.base_path / relative_path
     
     def set_base_path (self, base_path: str = "data"):
         """
-        redefine a pasta onde os arquivos serão armazenados.
+        Redefines the folder where the files will be stored.
 
         Parameters
         ----------
         base_path : str
-            Diretório base onde os arquivos serão armazenados.
+            Base directory where the files will be stored.
         """
         self.base_path = Path(base_path)
 
@@ -132,23 +149,23 @@ class IsolationForestAnalyzer:
         region_filter=None
     ) -> pd.DataFrame:
         """
-        Filtra o DataFrame por Product e/ou Region.
+        Filters the DataFrame by Product and/or Region.
 
         Parameters
         ----------
         df : pd.DataFrame
-            DataFrame de entrada.
+            Input DataFrame.
 
         product_filter : None, str, list, default=None
-            Produto único ou lista de produtos.
+            Single product or list of products.
 
         region_filter : None, str, list, default=None
-            Região única ou lista de regiões.
+            Single region or list of regions.
 
         Returns
         -------
         pd.DataFrame
-            DataFrame filtrado.
+            Filtered DataFrame.
         """
         df_out = df.copy()
 
@@ -168,6 +185,39 @@ class IsolationForestAnalyzer:
     # FEATURES DO MODELO
     # =========================================================
     def create_if_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Creates and prepares features for the Isolation Forest model.
+
+        This method validates the required input columns, creates copies of the 
+        signals, and normalizes them by converting values to numeric, handling 
+        infinite/missing data, and clipping values to specific ranges.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The input DataFrame containing the raw source columns.
+
+        Returns
+        -------
+        pd.DataFrame
+            A new DataFrame containing the original data along with the 
+            processed Isolation Forest features.
+
+        Raises
+        ------
+        ValueError
+            If any of the required columns are missing from the input DataFrame.
+
+        Notes
+        -----
+        The following transformations are applied to the signals:
+        - Non-numeric values are converted to NaN.
+        - Infinite values (inf, -inf) are replaced with NaN.
+        - 'if_qty_signal' and 'if_sales_signal' are clipped between -5 and 5.
+        - 'if_discount_signal' is clipped between -1 and 1.
+        - 'if_ticket_signal' is clipped to a minimum value of 0.
+        """
+
         required_cols = [
             "quantity_pct_vs_mean_7d",
             "total_price_vs_mean_30d",
@@ -209,6 +259,41 @@ class IsolationForestAnalyzer:
     # =========================================================
     @staticmethod
     def _unsupervised_extreme_separation_scorer(estimator, X, y=None):
+
+        """
+        Calculates an unsupervised score based on the separation between 
+        extreme and normal predictions.
+
+        This custom scorer evaluates how well the estimator separates the top 
+        10% most anomalous or extreme samples from the remaining 90% of normal 
+        samples, based on the decision function scores.
+
+        Parameters
+        ----------
+        estimator : object
+            The fitted unsupervised model (e.g., Isolation Forest) that 
+            implements a `decision_function` method.
+        X : array-like or pd.DataFrame
+            The input data to be scored.
+        y : Ignored
+            Not used, present for API compatibility with scikit-learn.
+
+        Returns
+        -------
+        float
+            The difference between the mean score of normal samples and the 
+            mean score of extreme samples. Returns 0.0 if there are fewer than 
+            10 samples or if separation is not possible.
+
+        Notes
+        -----
+        Unlike a fixed threshold (e.g., 0.5 or 100), the 'cutoff' variable acts 
+        as an adaptive threshold. It calculates the dynamic score value that 
+        separates the bottom 10% lowest scores (the most extreme/anomalous 
+        samples) from the rest of the data. Any score less than or equal to 
+        this cutoff point is classified into the 'extreme_mask'.
+        """
+
         scores = estimator.decision_function(X)
 
         if len(scores) < 10:
@@ -230,6 +315,18 @@ class IsolationForestAnalyzer:
     # PIPELINE
     # =========================================================
     def _build_pipeline(self) -> Pipeline:
+        """
+        Builds the machine learning pipeline for anomaly detection.
+
+        The pipeline consists of a data imputation step using the median, 
+        followed by robust scaling, and ends with the Isolation Forest model.
+
+        Returns
+        -------
+        Pipeline
+            A scikit-learn Pipeline object containing the preprocessing steps 
+            and the model.
+        """
         return Pipeline(
             steps=[
                 ("imputer", SimpleImputer(strategy="median")),
@@ -245,6 +342,19 @@ class IsolationForestAnalyzer:
         )
 
     def _build_param_grid(self) -> dict:
+        """
+        Builds the parameter grid for hyperparameter tuning.
+
+        Defines the search space for the Isolation Forest model, including 
+        the number of estimators, maximum samples, contamination rate, and 
+        maximum features.
+
+        Returns
+        -------
+        dict
+            A dictionary mapping pipeline parameter names to lists of settings 
+            to try during grid search.
+        """
         return {
             "model__n_estimators": [100, 200, 300],
             "model__max_samples": [512, 1024, 2048],
@@ -256,6 +366,18 @@ class IsolationForestAnalyzer:
     # TREINO E PREDIÇÃO
     # =========================================================
     def fit(self, df: pd.DataFrame):
+        """
+         Train the model
+         Notes
+        -----
+        - Unsupervised Scoring: A custom scoring function 
+          ('_unsupervised_extreme_separation_scorer') is used during hyperparameter 
+          tuning to evaluate the model's performance without labeled data.
+        - Software Engineering Notice: The current architectural structure of 
+          this GridSearchCV setup does not fully comply with best software engineering 
+          practices. However, this is a known technical debt and will be refactored 
+          in an upcoming version. 
+        """
         df_model = self.create_if_features(df)
         X = df_model[self.feature_cols_].copy()
 
@@ -267,6 +389,7 @@ class IsolationForestAnalyzer:
             scoring=self._unsupervised_extreme_separation_scorer,
             cv=self.cv,
             n_jobs=self.n_jobs,
+            pre_dispatch='2*n_jobs',
             verbose=self.verbose,
             refit=True
         )
@@ -281,6 +404,9 @@ class IsolationForestAnalyzer:
         return self
 
     def predict(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+         Predict
+        """
         self._check_is_fitted()
 
         df_model = self.create_if_features(df)
@@ -411,39 +537,39 @@ class IsolationForestAnalyzer:
         figsize_per_plot: tuple = (14, 4)
     ):
         """
-        Plota subplots de anomalias ao longo do tempo por Product ou Region.
+        Plots subplots of anomalies over time by Product or Region.
 
         Parameters
         ----------
         df_pred : pd.DataFrame
-            DataFrame já processado por `predict`.
+            DataFrame already processed by `predict`.
 
         group_by : str, default="Product"
-            Agrupador do subplot.
-            Valores esperados: "Product" ou "Region".
+            The column used to group the subplots.
+            Expected values: "Product" or "Region".
 
         date_col : str, default="Order_Date"
-            Coluna de data.
+            Date column.
 
         value_col : str, default="total_price_sum"
-            Métrica do eixo Y.
+            Y-axis metric.
 
         product_filter : None, str, list, default=None
-            Filtro opcional por produto.
+            Optional filter by product.
 
         region_filter : None, str, list, default=None
-            Filtro opcional por região.
+            Optional filter by region[cite: 3].
 
         max_groups : int, default=6
-            Número máximo de grupos a exibir.
+            Maximum number of groups to display[cite: 3].
 
         figsize_per_plot : tuple, default=(14, 4)
-            Tamanho base por subplot.
+            Base size per subplot[cite: 3].
 
         Returns
         -------
         None
-            Exibe os gráficos.
+            Displays the plots.
         """
         if group_by not in ["Product", "Region"]:
             raise ValueError("group_by deve ser 'Product' ou 'Region'.")

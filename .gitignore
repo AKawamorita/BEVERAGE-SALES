@@ -9,6 +9,9 @@ __pycache__/
 # venv 
 _venv/
 
+# site 
+site/
+
 # Data
 *.parquet
 *.csv

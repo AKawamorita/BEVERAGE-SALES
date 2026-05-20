@@ -6,7 +6,7 @@
 ![techinical infographic](img/InfoGraphic50.png)
 
 ## Dataset
-<br><small>https://www.kaggle.com/datasets/sebastianwillmann/beverage-sales</small>
+<br><a https://www.kaggle.com/datasets/sebastianwillmann/beverage-sales" target="_blank">🌐 Pesquisar o artigo/dataset do Kaggle DataSet</a>
 
 
 ## Overview
@@ -66,7 +66,15 @@ Suggested execution order:
 8. `08_performance_benchmarking.ipynb`
 
 ---
+### Export parquet to API project
 
+- To finalize the model, a compressed Parquet file is generated to be used in the API project. It is only required in the Beverage-Sales API project because the API relies on historical data to return responses, due to the use of a Sliding Window.
+Location (data/exports)
+- 📦`anomaly_predictions_api.parquet`
+
+![parquet schema](img/esquema_parquets.png)
+
+---
 ## Project Storytelling
 
 ![main cities and products consumed](img/MAP_P40.png)
