@@ -6,7 +6,12 @@
 ![techinical infographic](img/InfoGraphic50.png)
 
 ## Dataset
-<br><small>https://www.kaggle.com/datasets/sebastianwillmann/beverage-sales</small>
+
+- Devido ao tamanho do arquivo original, o dataset não foi incluído neste repositório GitHub. O download deve ser realizado diretamente no Kaggle.
+
+<small><a href="https://www.kaggle.com/datasets/sebastianwillmann/beverage-sales" target="_blank">🌐 Pesquisar o artigo/dataset do Kaggle DataSet</a></small>
+
+
 
 
 ## Visão Geral
@@ -690,24 +695,3 @@ Neste projeto, a resposta é clara:
 - o SHAP confirma que o modelo se apoia em atributos temporais e contextuais coerentes
 - a arquitetura geral é consistente com um fluxo real de engenharia de ML
 
----
-
-## Resumo Executivo Sugerido
-
-Este projeto desenvolveu um pipeline híbrido de previsão de demanda para vendas de bebidas usando LightGBM, Isolation Forest e SHAP.  
-Após validar a qualidade dos dados e construir atributos temporais com sliding windows, duas estratégias de previsão foram comparadas: um modelo base e um modelo híbrido sensível a anomalias.
-
-Os resultados mostram que o baseline já é muito forte, mas o modelo híbrido entrega os ganhos mais relevantes em períodos anômalos, onde a previsão é naturalmente mais difícil.  
-Isso torna a abordagem híbrida especialmente valiosa do ponto de vista de negócio, já que os maiores e mais instáveis erros costumam ser os mais custosos.
-
-
-## Notas
-
-Este não é apenas um notebook de previsão.  
-É um projeto estruturado de machine learning que conecta:
-
-- disciplina de engenharia de dados
-- design de atributos temporais
-- modelagem sensível a anomalias
-- explicabilidade
-- e avaliação orientada por benchmark

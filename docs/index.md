@@ -6,7 +6,10 @@
 ![techinical infographic](img/InfoGraphic50.png)
 
 ## Dataset
-<br><a https://www.kaggle.com/datasets/sebastianwillmann/beverage-sales" target="_blank">🌐 Pesquisar o artigo/dataset do Kaggle DataSet</a>
+
+- Due to its large file size, the dataset is not included in this GitHub repository. Please download it directly from Kaggle.
+
+<small><a href="https://www.kaggle.com/datasets/sebastianwillmann/beverage-sales" target="_blank">🌐 Kaggle DataSet</a></small>
 
 
 ## Overview
@@ -689,14 +692,5 @@ In this project, the answer is clear:
 - SHAP confirms that the model relies on coherent temporal and contextual features
 - the overall architecture is consistent with a real ML engineering workflow
 
----
-
-## Suggested Executive Summary
-
-This project developed a hybrid demand forecasting pipeline for beverage sales using LightGBM, Isolation Forest, and SHAP.  
-After validating data quality and building time-based features through sliding windows, two forecasting strategies were compared: a baseline model and a hybrid anomaly-aware model.
-
-The results show that the baseline is already very strong, but the hybrid model delivers the most relevant gains in anomalous periods, where prediction is naturally harder.  
-This makes the hybrid approach especially valuable from a business perspective, since the largest and most unstable errors are often the most costly.
 
 
