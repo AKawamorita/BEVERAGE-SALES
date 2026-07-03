@@ -1,194 +1,224 @@
-# Análise de Vendas de Bebidas e Pipeline Híbrido de ML
-<br>
-📝Idioma: <small>A documentação é mantida quase inteiramente em inglês para garantir consistência técnica e evitar retrabalho.</small>
-             <small>The documentation is maintained in English to guarantee technical consistency and avoid redundant documentation work.</small>
+# Beverage Sales Analytics and Hybrid ML Pipeline
 
-![techinical infographic](img/InfoGraphic50.png)
+<br>
+
+📝 **Language note:** <small>This documentation is maintained primarily in English to keep the technical material consistent and avoid duplicated work.</small>  
+<small>A documentação é mantida principalmente em inglês para garantir consistência técnica e evitar retrabalho.</small>
+
+![Technical infographic](img/InfoGraphic50.png)
+
+---
 
 ## Dataset
 
-- Devido ao tamanho do arquivo original, o dataset não foi incluído neste repositório GitHub. O download deve ser realizado diretamente no Kaggle.
+Due to its large file size, the dataset is not included in this GitHub repository.  
+Please download it directly from Kaggle:
 
-<small><a href="https://www.kaggle.com/datasets/sebastianwillmann/beverage-sales" target="_blank">🌐 Pesquisar o artigo/dataset do Kaggle DataSet</a></small>
-
-
-
-
-## Visão Geral
-
-Este projeto propõe um **pipeline híbrido de previsão para vendas de bebidas** que combina:
-
-- **previsão supervisionada de demanda** com **LightGBM**
-- **detecção não supervisionada de anomalias** com **Isolation Forest**
-- **análise de explicabilidade** com **SHAP**
-- **engenharia de atributos temporais** usando **sliding windows**, estatísticas móveis e razões orientadas ao negócio
-
-A ideia central é simples: um modelo de previsão pode se beneficiar de sinais que indiquem quando o contexto de vendas parece incomum.  
-Em vez de usar apenas atributos tradicionais de defasagem e janelas móveis, o projeto adiciona uma camada de anomalia para que o modelo de previsão consiga reagir melhor a comportamentos de demanda raros, instáveis ou inesperados.
+<small><a href="https://www.kaggle.com/datasets/sebastianwillmann/beverage-sales" target="_blank">🌐 Kaggle Dataset</a></small>
 
 ---
 
-## Motivação de Negócio
+## Executive Summary
 
-Os dados de vendas raramente se comportam de forma perfeitamente estável. Em cenários reais, a demanda pode aumentar ou cair devido a:
+This project proposes a **hybrid forecasting pipeline for beverage sales** that combines:
 
-- mudanças locais de demanda
-- promoções ou descontos
-- comportamento específico por produto/região
-- mudanças na concentração de clientes
-- eventos incomuns de negócio
+- **supervised demand forecasting** with **LightGBM**
+- **unsupervised anomaly detection** with **Isolation Forest**
+- **explainability analysis** with **SHAP**
+- **time-based feature engineering** using sliding windows, rolling statistics, and business-oriented ratios
 
-Um modelo treinado apenas em médias históricas pode funcionar bem em períodos normais, mas ter dificuldades quando o padrão se torna menos estável.  
-Por isso, este projeto investiga se uma **previsão sensível a anomalias** pode melhorar o desempenho em comparação com um **modelo base de previsão**.
+The central idea is that a forecasting model can benefit from signals that describe when the sales context looks unusual.
 
----
+Instead of relying only on historical averages, lag variables, or rolling statistics, the project adds an anomaly-detection layer. These anomaly signals are then used as additional context by the forecasting model.
 
-## Objetivo Principal
-
-Construir e avaliar um fluxo de previsão capaz de prever vendas agregadas de bebidas, respondendo à seguinte pergunta:
-
-> Um modelo híbrido que recebe sinais de anomalia do Isolation Forest tem desempenho melhor do que um modelo base padrão?
+The goal is not only to improve global forecasting metrics, but also to verify whether the hybrid approach helps especially in **unstable or anomalous demand periods**, where forecasting errors are usually more relevant for business decisions.
 
 ---
 
-##### ⚙️The project follows this logic:
-**raw data -> data quality -> feature engineering -> anomaly detection -> baseline model -> hybrid model -> performance benchmarking**<br>
+## Business Motivation
 
-##### ⚙️Execution order
-The project was organized as a notebook pipeline. The recommended execution order is:<br>
-📝01_data_loading.ipynb -> 📝02_data_quality.ipynb -> 📝03_feature_engineering.ipynb -> 📝04_anomaly_detection.ipynb -> <br>
-📝05_BaseLine.ipynb -> 📝06_HybridModel.ipynb -> 📝07_Interpretability_SHAP_Analysis.ipynb -> 📝08_performance_benchmarking.ipynb <br>
+Sales data rarely behaves in a perfectly stable way. In real scenarios, beverage sales may spike or drop because of:
 
-Suggested execution order:
+- local demand changes
+- promotions or discounts
+- product and region-specific behavior
+- changes in customer concentration
+- seasonality
+- unusual business events
 
-1. `01_data_loading.ipynb`
-2. `02_data_quality.ipynb`
-3. `03_feature_engineering.ipynb`
-4. `04_anomaly_detection.ipynb`
-5. `05_BaseLine.ipynb`
-6. `06_HybridModel.ipynb`
-7. `07_Interpretability_SHAP_Analysis.ipynb`
-8. `08_performance_benchmarking.ipynb`
+A forecasting model trained only on normal historical behavior may perform well in stable periods, but struggle when sales patterns become less predictable.
+
+Because of that, this project investigates whether **anomaly-aware forecasting** can improve performance compared to a standard **baseline forecasting model**.
 
 ---
 
-### Export parquet to API project
+## Main Objective
 
-Para finalizar o pipeline, um arquivo Parquet compactado é gerado para abastecer a API. Ele é necessário exclusivamente no projeto Beverage-Sales, já que a API utiliza dados históricos para responder às requisições devido à implementação da Janela Deslizante (Sliding Window)
-Localizacao (data/exports)
-- 📦`anomaly_predictions_api.parquet`
+Build and evaluate a forecasting workflow capable of predicting aggregated beverage sales while answering the following question:
 
-![parquet schema](img/esquema_parquets.png)
----
-
-## Storytelling do Projeto
-
-![main cities and products consumed](img/MAP_P40.png)
-
-O projeto foi desenhado como um pipeline estruturado, e não como um experimento isolado em notebook.
-
-O fluxo começa com dados brutos transacionais de vendas em formato CSV.  
-A partir daí, os dados são validados, transformados, enriquecidos com atributos temporais e agregados, e finalmente usados em duas estratégias de modelagem:
-
-1. **Modelo base**  
-   Um regressor LightGBM treinado apenas com atributos de negócio e de séries temporais.
-
-2. **Modelo híbrido**  
-   Um regressor LightGBM treinado com os mesmos atributos **mais** sinais de anomalia gerados pelo Isolation Forest.
-
-Após o treinamento de ambos os modelos, o projeto compara seu comportamento globalmente e, mais importante, em períodos marcados como anômalos.  
-Essa é uma distinção relevante porque espera-se que a modelagem sensível a anomalias ajude mais **quando os dados se desviam do comportamento normal**, e não necessariamente em todos os cenários estáveis.
-
-Por fim, o projeto usa **SHAP** para tornar o modelo híbrido mais interpretável e verificar se os atributos de anomalia realmente contribuem para as decisões do modelo.
+> Does a hybrid model that receives anomaly signals from Isolation Forest perform better than a standard baseline model, especially during anomalous periods?
 
 ---
 
-## Fluxo End-to-End
+## Pipeline Overview
 
-O projeto segue esta ordem de execução:
+The project follows this general logic:
 
-1. `01_data_loading.ipynb`
-2. `02_data_quality.ipynb`
-3. `03_feature_engineering.ipynb`
-4. `04_anomaly_detection.ipynb`
-5. `05_BaseLine.ipynb`
-6. `06_HybridModel.ipynb`
-7. `07_Interpretability_SHAP_Analysis.ipynb`
-8. `08_performance_benchmarking.ipynb`
-
-### Função de cada Notebook
-
-| Notebook | Papel no pipeline |
-|---|---|
-| `01_data_loading.ipynb` | Carrega os dados brutos em CSV e os salva em formato Parquet |
-| `02_data_quality.ipynb` | Aplica regras de validação e verifica se os dados processados são confiáveis |
-| `03_feature_engineering.ipynb` | Constrói atributos temporais, móveis, de razão e agregados |
-| `04_anomaly_detection.ipynb` | Treina o Isolation Forest e gera `anomaly_score` e `anomaly_flag` |
-| `05_BaseLine.ipynb` | Treina o modelo base com LightGBM |
-| `06_HybridModel.ipynb` | Treina o modelo híbrido com LightGBM e sinais de anomalia |
-| `07_Interpretability_SHAP_Analysis.ipynb` | Explica o modelo híbrido usando SHAP |
-| `08_performance_benchmarking.ipynb` | Compara o desempenho do modelo base versus o híbrido |
+```text
+raw data
+  -> data quality validation
+  -> feature engineering
+  -> anomaly detection
+  -> baseline forecasting model
+  -> hybrid forecasting model
+  -> performance benchmarking
+  -> SHAP interpretability
+```
 
 ---
 
-## Carga de Dados e Persistência
+## Recommended Execution Order
 
-O primeiro notebook converte o dataset bruto em CSV para **Parquet**, o que é uma decisão prática de engenharia porque melhora:
+The project is organized as a notebook-based pipeline.
 
-- desempenho de leitura
-- consistência do pipeline
-- reprodutibilidade entre etapas
-- reutilização mais fácil em notebooks e APIs posteriores
-
-Esse passo pode parecer simples, mas é importante porque transforma o projeto em um fluxo mais orientado à produção, em vez de uma exploração pontual em notebook.
-
----
-
-## Validação de Qualidade dos Dados
-
-Antes de construir atributos ou modelos, o projeto valida o dataset processado.
-
-### Regras de qualidade verificadas
-
-O notebook de qualidade avaliou 10 regras de validação, incluindo:
-
-- quantidade ausente
-- quantidade negativa
-- desconto ausente
-- desconto negativo
-- desconto acima de um
-- tipo de cliente inválido
-- violação da regra de desconto B2C
-- data do pedido inválida
-- linhas duplicadas exatas
-- consistência do preço total
-
-### Resultado
-
-O relatório de qualidade indicou:
-
-- **Regras avaliadas:** 10  
-- **Regras com problemas encontrados:** 0  
-- **Total de problemas:** 0  
-- **Problemas de alta severidade:** nenhum detectado
-
-### Interpretação
-
-Essa é uma base importante para o restante do projeto.  
-Um modelo de previsão só pode ser confiável se os dados de entrada também forem confiáveis.  
-Ao validar explicitamente as regras de negócio antes da geração de atributos, o projeto reduz o risco de aprender com registros inválidos ou inconsistências silenciosas na origem dos dados.
+| Step | Notebook | Purpose |
+|---:|---|---|
+| 1 | `01_data_loading.ipynb` | Loads the raw CSV data and saves it in Parquet format |
+| 2 | `02_data_quality.ipynb` | Applies validation rules and checks whether the processed data is reliable |
+| 3 | `03_feature_engineering.ipynb` | Builds temporal, rolling, ratio, and aggregated features |
+| 4 | `04_anomaly_detection.ipynb` | Trains Isolation Forest and generates anomaly signals |
+| 5 | `05_BaseLine.ipynb` | Trains the baseline LightGBM model |
+| 6 | `06_HybridModel.ipynb` | Trains the hybrid LightGBM model with anomaly signals |
+| 7 | `07_Interpretability_SHAP_Analysis.ipynb` | Explains the hybrid model using SHAP |
+| 8 | `08_performance_benchmarking.ipynb` | Compares baseline vs. hybrid performance |
 
 ---
 
-## Engenharia de Atributos
+## Export to API Project
 
-Esta etapa é uma das partes mais fortes do projeto.
+To finalize the workflow, a compressed Parquet file is generated for use in the API project.
 
-Em vez de tratar o problema como uma tarefa genérica de regressão tabular, o notebook introduz atributos sensíveis ao tempo e ao negócio que ajudam o modelo a entender o comportamento da demanda de forma mais realista.
+The API requires historical data because the project uses **sliding-window features**. Therefore, the exported file allows the API layer to reuse the same feature context expected by the model.
 
-### Principais atributos gerados
+Output location:
 
-O projeto inclui atributos como:
+```text
+data/exports/anomaly_predictions_api.parquet
+```
+
+![Parquet schema](img/esquema_parquets.png)
+
+---
+
+## Project Storytelling
+
+![Main regions and products consumed](img/MAP_P40.png)
+
+The project was designed as a structured pipeline rather than an isolated notebook experiment.
+
+The flow starts with raw transactional sales data in CSV format. From there, the data is validated, transformed, enriched with temporal and aggregated features, and finally used in two modeling strategies:
+
+1. **Baseline model**  
+   A LightGBM regressor trained only on business and time-series engineered features.
+
+2. **Hybrid model**  
+   A LightGBM regressor trained on the same features plus anomaly signals generated by Isolation Forest.
+
+After training both models, the project compares their behavior globally and, more importantly, in periods marked as anomalous.
+
+This distinction is important because anomaly-aware modeling is expected to help the most **when data deviates from normal behavior**, not necessarily in every stable scenario.
+
+Finally, the project uses **SHAP** to make the hybrid model more interpretable and to verify whether the model is relying on coherent business and temporal signals.
+
+---
+
+# STAR Narrative
+
+## Situation
+
+Sales demand is not always stable. In real business scenarios, beverage sales may change due to promotions, local behavior, product-region combinations, customer concentration, discounts, seasonality, or unusual events.
+
+A standard forecasting model can perform well in normal periods, but it may struggle when demand becomes unstable or anomalous. This creates a business risk because the largest forecasting errors often happen exactly when planning decisions are more important.
+
+In this project, the goal was not only to forecast sales, but also to understand whether anomaly-aware modeling could help the model respond better to unusual demand patterns.
+
+---
+
+## Task
+
+The main task was to build a structured machine learning workflow capable of:
+
+- loading and validating transactional sales data
+- transforming raw sales records into time-aware features
+- creating rolling-window and contextual indicators
+- detecting unusual sales behavior using an unsupervised model
+- training a supervised baseline forecasting model
+- training a hybrid forecasting model enriched with anomaly signals
+- comparing the models globally and by anomaly group
+- explaining the model behavior using SHAP
+
+The central project question was:
+
+> Does a hybrid model that receives anomaly signals perform better than a standard baseline model, especially during anomalous periods?
+
+---
+
+## Action
+
+### 1. Structured the project as an end-to-end notebook pipeline
+
+The project was organized as a reproducible workflow rather than a single notebook experiment. This makes the work easier to understand, execute, document, and evolve.
+
+The pipeline follows this order:
+
+```text
+01_data_loading.ipynb
+02_data_quality.ipynb
+03_feature_engineering.ipynb
+04_anomaly_detection.ipynb
+05_BaseLine.ipynb
+06_HybridModel.ipynb
+07_Interpretability_SHAP_Analysis.ipynb
+08_performance_benchmarking.ipynb
+```
+
+---
+
+### 2. Loaded and persisted the data in Parquet format
+
+The raw CSV dataset was converted into Parquet format to improve:
+
+- read performance
+- consistency between notebooks
+- reproducibility
+- reuse by downstream notebooks and API components
+
+This step helps move the project from a simple exploratory analysis toward a more engineering-oriented workflow.
+
+---
+
+### 3. Added data quality validation before modeling
+
+Before feature engineering and training, the pipeline validates business and consistency rules such as:
+
+- missing quantities
+- negative quantities
+- missing discounts
+- invalid discounts
+- invalid customer types
+- invalid order dates
+- duplicate rows
+- total price consistency
+
+This is important because a forecasting model can only be trusted if the input data is reliable.
+
+---
+
+### 4. Created time-aware and business-aware features
+
+The project does not treat the dataset as a generic tabular regression problem. Instead, it creates features that represent recent demand behavior and local temporal context.
+
+Examples of engineered features include:
 
 - `quantity_sum`
 - `total_price_sum`
@@ -202,7 +232,7 @@ O projeto inclui atributos como:
 - `year`
 - `is_weekend`
 
-Também cria atributos móveis e contextuais como:
+The project also creates rolling and contextual features such as:
 
 - `quantity_sum_mean_7d`
 - `quantity_sum_std_7d`
@@ -218,351 +248,81 @@ Também cria atributos móveis e contextuais como:
 - `history_less_than_7d`
 - `history_less_than_30d`
 
-### Por que isso importa
+These features help the model understand:
 
-Esses atributos fazem mais do que resumir o histórico.  
-Eles dão ao modelo uma noção de:
-
-- comportamento de curto prazo
-- dispersão e estabilidade
-- aceleração ou desaceleração recente da demanda
-- relação entre a demanda atual e a média local recente
-- maturidade da janela histórica
-
-Esse é exatamente o tipo de engenharia de atributos que permite que modelos baseados em árvores, como o LightGBM, funcionem bem em contextos de séries temporais.
+- short-term demand behavior
+- recent acceleration or slowdown
+- dispersion and instability
+- current demand compared with local historical averages
+- maturity of the available historical window
 
 ---
 
-## Lógica de Sliding Window
+### 5. Used sliding windows to represent recent history
 
-Uma ideia técnica central neste projeto é o uso de **sliding windows**.
+A key technical idea in the project is the use of **sliding windows**.
 
-Em vez de alimentar o modelo apenas com o registro atual, o projeto resume o histórico recente em janelas como 7, 14 e 30 dias.  
-Isso torna possível converter um problema temporal em um problema supervisionado baseado em atributos, sem ignorar a ordem dos eventos.
+Instead of feeding the model only the current record, the pipeline summarizes recent historical behavior using windows such as 7, 14, and 30 days.
 
-### Interpretação prática
+This transforms a temporal forecasting problem into a supervised learning problem without completely ignoring the order of events.
 
-A sliding window permite que o modelo responda a perguntas como:
+The model can answer questions such as:
 
-- Qual foi a demanda média nos últimos 7 dias?
-- Quão instável a demanda esteve recentemente?
-- O valor atual está acima ou abaixo do nível normal recente?
-- Há histórico suficiente para confiar nessas estatísticas?
-
-### Por que sliding window é importante aqui
-
-Sem essa etapa, o LightGBM receberia majoritariamente colunas estáticas e não entenderia bem o contexto temporal.  
-Com as sliding windows, o modelo ganha uma visão compacta da dinâmica de curto prazo e consegue capturar melhor o comportamento local da demanda.
-
-### Força técnica
-
-Essa é uma das razões pelas quais o projeto é mais forte do que um simples exercício de “aplicar LightGBM em um dataset”.  
-O modelo não está dependendo apenas do algoritmo.  
-Ele está dependendo de uma representação do tempo bem planejada.
+- What was the average demand in the last 7 days?
+- How unstable was demand recently?
+- Is the current value above or below the recent local average?
+- Does the current behavior look like a short-term spike?
+- Is there enough past history to trust the rolling statistics?
 
 ---
 
-## Análise Exploratória e Inspeção de Outliers
+### 6. Trained an unsupervised anomaly detection model
 
-O notebook de engenharia de atributos também inclui análise visual exploratória, como:
+The anomaly detection stage uses **Isolation Forest** to identify unusual sales behavior without requiring manually labeled anomalies.
 
-- análise de distribuição
-- boxplots
-- violin plots
-- inspeção de outliers baseada em IQR
-
-Essas análises são úteis por dois motivos:
-
-1. Elas mostram que o autor investigou os dados antes da modelagem.
-2. Elas ajudam a justificar por que a detecção de anomalias faz sentido neste dataset.
-
-A exploração visual sugere que a quantidade vendida não é perfeitamente estável e que os dados contêm comportamento assimétrico e observações incomumente altas.  
-Isso fornece uma motivação natural para testar uma arquitetura sensível a anomalias.
-
-
-###### <small>1. Nota</small>
-A distribuição mostrada nos seus dados de vendas de bebidas — caracterizada por uma base densa e um “pescoço” fino de outliers — é um desafio significativo para modelos aditivos como o Prophet.
-
-* **Distorção da sazonalidade**: o Prophet identifica padrões repetitivos com base no tempo. Se um pico de vendas de **100 unidades** acontecer em dezembro, o modelo pode rotular isso incorretamente como um “efeito dezembro” permanente. Isso leva a superprevisão em anos futuros, mesmo que o pico tenha sido uma anomalia pontual.
-* **Instabilidade de tendência**: como o Prophet é um modelo baseado em regressão, ele é altamente sensível a valores extremos. Um único outlier nesse “pescoço” pode puxar toda a tendência de base para cima, fazendo o modelo perder precisão nos dias normais de venda.
-* **Inflação da incerteza**: o modelo calcula intervalos de incerteza com base na variância histórica. Quando ele vê valores variando de **0 a 100** enquanto a mediana é apenas **10–15**, os intervalos de previsão ficam tão amplos que perdem valor prático para planejamento de estoque.
-
----
-
-###### <small>2. Análise Comparativa: Prophet vs. Modelo Híbrido</small>
-A abordagem híbrida usando **Isolation Forest** e **LightGBM** supera essas limitações ao focar em transparência técnica e **Explainable AI (XAI)**.
-
-| Característica | Prophet (Padrão) | Seu Modelo Híbrido (Orientado por XAI) |
-| :--- | :--- | :--- |
-| **Tratamento de outliers** | Tenta ajustar a curva aos outliers, distorcendo a tendência de longo prazo. | Usa um `anomaly_flag` para isolar e identificar eventos incomuns. |
-| **Lógica de previsão** | Depende estritamente de padrões baseados em tempo, como dias ou meses. | Usa direcionadores operacionais, como `order_count` e `quantity_vs_mean_7d`. |
-| **Interpretabilidade** | Difícil explicar por que um pico ou queda específica ocorreu. | Usa **gráficos waterfall do SHAP** para mostrar exatamente quais atributos conduziram a previsão. |
-| **Acurácia** | Frequentemente superestima a demanda após observar um pico histórico. | Reduz o erro (MAE/RMSE) ao reconhecer e ajustar atividade incomum. |
-
----
-
-## Detecção de Anomalias com Isolation Forest
-
-A etapa de detecção de anomalias treina um modelo **Isolation Forest** para detectar comportamento incomum nas vendas.
-
-### Decisão metodológica importante
-
-O notebook afirma explicitamente que, para evitar leakage, o modelo de anomalia é treinado apenas em:
-
-- **2021**
-- **2022**
-
-O ano de **2023** é deixado para teste.
-
-Essa é uma escolha de design muito boa porque preserva o realismo temporal.
-
-### Melhores parâmetros encontrados
-
-O notebook reporta os seguintes melhores parâmetros para o Isolation Forest:
-
-- `contamination = 0.01`
-- `max_features = 1.0`
-- `max_samples = 512`
-- `n_estimators = 100`
-
-### Sinais de anomalia gerados
-
-A etapa de detecção de anomalias produz pelo menos dois atributos importantes:
+The model generates anomaly-related signals such as:
 
 - `anomaly_score`
 - `anomaly_flag`
+- `anomaly_label`
+- `if_qty_signal`
+- `if_sales_signal`
+- `if_discount_signal`
+- `if_ticket_signal`
 
-Esses sinais são depois injetados no modelo híbrido com LightGBM.
-
-### Por que isso é útil
-
-O Isolation Forest não está sendo usado aqui como modelo preditivo final.  
-Ele está sendo usado como um **detector de contexto**.
-
-Essa é a principal ideia arquitetural:
-
-- o modelo não supervisionado identifica contextos incomuns
-- o modelo supervisionado usa essa informação para melhorar a previsão de demanda
-
-Essa é uma forte decisão de design porque combina duas perspectivas de modelagem diferentes de forma complementar.
+A key methodological decision was to train the anomaly model only on historical data and preserve the future period for testing. This helps reduce data leakage and makes the evaluation more realistic.
 
 ---
 
-## Modelo Base de Previsão
+### 7. Compared a baseline model with a hybrid model
 
-O notebook base treina um **regressor LightGBM** usando apenas os atributos temporais e de negócio gerados.
+The project trained two LightGBM-based forecasting models:
 
-### Atributos usados no modelo base
+| Model | Description |
+|---|---|
+| Baseline model | Uses business and time-series engineered features only |
+| Hybrid model | Uses the same features plus anomaly signals from Isolation Forest |
 
-O modelo base usa:
-
-- agregações de negócio
-- atributos de calendário
-- estatísticas de janelas móveis
-- atributos de razão/contexto
-- identificadores categóricos como `Product` e `Region`
-
-### Métricas reportadas do modelo base
-
-O notebook reporta as seguintes métricas de avaliação:
-
-- **MAE:** `2.7275`
-- **RMSE:** `4.1588`
-- **R²:** `0.999305`
-
-### Interpretação
-
-Esses valores indicam que o modelo base já é muito forte.
-
-- Um **MAE baixo** sugere que o erro médio de previsão é pequeno.
-- Um **RMSE baixo** indica que erros grandes estão relativamente controlados.
-- Um **R² muito alto** sugere que o modelo explica quase toda a variância observada no alvo.
-
-Ainda assim, em problemas de previsão, ter um baseline forte não é motivo para parar.  
-Ele é o ponto correto de comparação para estratégias mais avançadas.
+This comparison isolates the incremental value of the anomaly layer. The objective is not simply to add more features, but to test whether anomaly-aware features help in the scenarios where demand is less stable.
 
 ---
 
-## Modelo Híbrido de Previsão
+### 8. Evaluated performance by anomaly group
 
-O notebook híbrido treina outro **regressor LightGBM**, mas agora com duas entradas adicionais:
+Instead of relying only on a single global metric, the project compares model behavior separately in:
 
-- `anomaly_score`
-- `anomaly_flag`
+- normal periods: `anomaly_flag = 0`
+- anomalous periods: `anomaly_flag = 1`
 
-Isso significa que o modelo recebe tanto:
-
-- o contexto normal estruturado de vendas
-- quanto um sinal indicando se o contexto atual parece incomum
-
-### Métricas reportadas no notebook híbrido
-
-O notebook reporta:
-
-- **MAE:** `2.7463`
-- **RMSE:** `4.1904`
-- **R²:** `0.999295`
-
-### Observação importante sobre a interpretação
-
-Essas métricas do notebook híbrido devem ser lidas com cautela quando comparadas diretamente com a seção final de benchmark, porque o projeto depois realiza uma comparação mais detalhada, separada por condição de anomalia e contexto de treino/teste.
-
-A conclusão mais importante do projeto **não** vem da leitura isolada das métricas do notebook híbrido.  
-Ela vem da etapa dedicada de benchmark, onde os dois modelos são comparados de forma mais estruturada.
+This is a stronger evaluation strategy because the hybrid model is expected to help most when the data deviates from normal behavior.
 
 ---
 
-## Benchmark de Desempenho
+### 9. Used SHAP to explain model behavior
 
-Este é o notebook que entrega a resposta final mais significativa.
+The project uses SHAP to explain the hybrid model and verify whether the model is learning meaningful demand structure.
 
-Em vez de comparar apenas uma métrica global, o projeto avalia ambos os modelos por **grupo de anomalia**.
-
-Isso é importante porque espera-se que a abordagem híbrida ajude especialmente quando o comportamento de vendas é incomum.
-
----
-
-## Comparação do Lado de Treino por Grupo de Anomalia
-
-A saída do benchmarking para a comparação no conjunto de treino mostra:
-
-| anomaly_flag | count | baseline_mae | hybrid_mae | baseline_rmse | hybrid_rmse | mae_improvement_pct | rmse_improvement_pct |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| 0 | 543470 | 2.6905 | 2.6947 | 3.9699 | 3.9670 | -0.1557% | 0.0736% |
-| 1 | 5490 | 6.3946 | 6.2201 | 13.0114 | 12.3144 | 2.7286% | 5.3573% |
-
-### Interpretação
-
-Esse resultado é muito revelador:
-
-- Em **casos normais** (`anomaly_flag = 0`), o modelo híbrido se comporta quase da mesma forma que o baseline.
-- Em **casos anômalos** (`anomaly_flag = 1`), o modelo híbrido mostra uma melhoria clara.
-
-Isso é exatamente o que se esperaria observar.
-
-Os atributos de anomalia não distorcem radicalmente o modelo em períodos normais.  
-Em vez disso, parecem se tornar mais úteis quando o contexto é instável.
-
----
-
-## Comparação do Lado de Teste por Grupo de Anomalia
-
-A comparação no conjunto de teste mostra:
-
-![principais cidades e produtos consumidos](img/Baseline_x_Hybrid.png)
-
-### Interpretação
-
-Análise dos resultados por anomaly_flag
-
-Esta tabela compara o modelo base e o modelo híbrido em dois grupos diferentes:
-
-anomaly_flag = 0: períodos normais
-anomaly_flag = 1: períodos anômalos
-
-A ideia principal é verificar se o modelo híbrido apresenta melhor desempenho, especialmente quando os dados mostram comportamento incomum.
-
-#### 1. Períodos normais (anomaly_flag = 0)
-
-Este grupo contém 271.161 observações, então representa quase todo o dataset.
-Nesse cenário, o modelo híbrido mostra uma pequena melhoria em relação ao baseline.
-
-MAE cai de 2.774 para 2.773
-Median AE cai de 1.937 para 1.930
-RMSE cai de 4.285 para 4.258
-Max AE cai de 186.173 para 161.018
-
-A melhoria percentual é pequena:
-
-Melhoria de MAE: cerca de 0,05%
-Melhoria de RMSE: cerca de 0,64%
-
-Isso significa que, em períodos normais, ambos os modelos se comportam de forma muito semelhante.
-O modelo híbrido é ligeiramente melhor, mas o ganho é modesto. Isso é esperado, porque em períodos estáveis o modelo base já apresenta bom desempenho.
-
-#### 2. Períodos anômalos (anomaly_flag = 1)
-
-Este grupo contém apenas 2.566 observações, então é muito menor, mas também mais importante do ponto de vista de negócio, porque são os casos difíceis.
-
-Aqui, o modelo híbrido apresenta desempenho de forma mais claramente melhor do que o baseline:
-
-MAE cai de 3.516 para 3.409
-Median AE cai de 2.224 para 2.128
-RMSE cai de 7.931 para 7.522
-Max AE cai de 263.094 para 245.972
-
-As melhorias são muito mais relevantes:
-
-Melhoria de MAE: cerca de 3,05%
-Melhoria de RMSE: cerca de 5,15%
-
-Este é um resultado importante. Ele sugere que a abordagem híbrida ajuda mais quando o padrão é incomum ou mais difícil de prever. Em outras palavras, a informação relacionada à anomalia parece adicionar sinal útil exatamente onde o problema de previsão é mais complexo.
-
-#### 3. Comparação entre períodos normais e anômalos
-
-A tabela também mostra que períodos anômalos são naturalmente mais difíceis para ambos os modelos.
-
-Por exemplo:
-
-Em períodos normais, o RMSE do baseline é 4.285
-Em períodos anômalos, o RMSE do baseline sobe para 7.931
-
-O mesmo acontece com MAE e Max AE.
-Isso indica que períodos anômalos contêm mais incerteza, mais volatilidade ou padrões mais difíceis de aprender.
-
-Por isso, o fato de o modelo híbrido melhorar de forma mais forte no grupo anômalo é significativo. Não é apenas uma melhoria estatística, mas também um sinal de que o componente de detecção de anomalias pode estar ajudando o modelo de previsão a focar em situações difíceis.
-
-#### 4. Interpretação final
-
-No geral, os resultados sugerem o seguinte:
-
-O modelo híbrido não prejudica o desempenho em períodos normais
-Ele traz ganhos pequenos, mas positivos, em situações estáveis
-Ele traz ganhos mais relevantes em períodos anômalos
-Ele também reduz o erro máximo, o que é útil porque erros muito grandes podem ser custosos em cenários reais
-
-#### Interpretação
-
-Globalmente, os ganhos são modestos, o que é esperado porque a maioria dos registros não é anômala.
-
-No entanto, o projeto se torna muito mais convincente quando observamos **onde** os ganhos acontecem:
-
-- o modelo híbrido não está melhorando principalmente os casos fáceis
-- ele está melhorando os segmentos mais difíceis e menos estáveis
-
-Esse é um argumento forte a favor do design híbrido.
-
----
-
-## Por que o Modelo Híbrido Importa
-
-Uma pergunta justa é:
-
-> Se o ganho geral não é tão grande, por que o modelo híbrido é importante?
-
-Porque em muitos problemas reais de negócio, o principal valor não vem de tornar casos já estáveis um pouco melhores.  
-Ele vem de reduzir o erro quando o comportamento se torna anormal.
-
-Este projeto mostra exatamente esse padrão:
-
-- períodos estáveis: desempenho quase equivalente
-- períodos instáveis: melhor controle de erro com modelagem sensível a anomalias
-
-Isso torna o modelo híbrido estrategicamente valioso.
-
----
-
-## Análise de Interpretabilidade com SHAP
-
-O projeto usa **SHAP** para entender o modelo híbrido.
-
-Esse é um passo importante porque, uma vez que atributos de anomalia são introduzidos, torna-se necessário explicar se eles realmente influenciam o modelo e como interagem com os outros preditores.
-
-![Gráfico de dependência SHAP](img/Dependence_plot01.png)
-
-### Atributos mais relevantes reportados
-
-A análise SHAP destaca atributos como:
+The most relevant features highlighted by SHAP include:
 
 - `numeric__quantity_vs_mean_7d`
 - `numeric__quantity_sum_mean_7d`
@@ -570,128 +330,592 @@ A análise SHAP destaca atributos como:
 - `numeric__order_count`
 - `numeric__total_price_vs_mean_30d`
 - `numeric__customer_count`
+- `numeric__anomaly_score`
 
-### Interpretação
-
-Esse ranking de atributos é coerente com a lógica de negócio do projeto.
-
-O modelo é conduzido principalmente por:
-
-- desvio em relação ao comportamento recente
-- nível local recente de demanda
-- intensidade de pedidos
-- concentração de clientes
-- contexto relativo a janelas históricas curtas e médias
-
-Isso é um sinal muito bom, porque mostra que o modelo está aprendendo uma estrutura significativa de demanda, em vez de depender de ruído arbitrário.
-
-### Papel dos sinais de anomalia no SHAP
-
-![waterfall shap](img/Waterfall_plot.png)
-
-Por que o Modelo Previu Alta Demanda  
-O gráfico waterfall explica como o nosso modelo híbrido ajustou sua previsão para um evento específico de alto impacto. Partindo de uma linha de base de 253.12, o modelo levou em conta vários sinais importantes para chegar a uma previsão final de 828.91.  
-
-Embora o valor real tenha sido 867.00, o modelo híbrido foi muito mais preciso do que o baseline (que previu 781.09), reduzindo o erro de previsão em 47.82 unidades.
-
-Em última análise, este caso prova que a abordagem híbrida se destaca ao capturar comportamentos “incomuns” que modelos padrão podem deixar passar, aproximando muito mais a previsão da realidade durante eventos críticos de vendas.
+This feature ranking is coherent with the business logic of the project because the model is mostly driven by recent deviation, local demand level, order intensity, customer concentration, and medium-term context.
 
 ---
 
-## Interpretação das Principais Métricas
+## Result
 
-![ ](img/Baseline_x_Hybrid.png)
+The project produced a complete and defensible machine learning pipeline for sales forecasting and anomaly-aware demand analysis.
 
-### MAE — Erro Absoluto Médio
+The most relevant result was not only that the hybrid model improved performance, but **where** it improved.
 
-O MAE mede a diferença absoluta média entre a previsão e o valor real.
+### Normal periods
 
-Em termos práticos:
+In normal periods, the hybrid model behaved very close to the baseline. This is a positive result because it indicates that the anomaly features did not significantly distort the model when sales behavior was stable.
 
-- ele informa quão distante a previsão está da realidade em média
-- é fácil de interpretar
-- é menos sensível a erros extremos do que o RMSE
+### Anomalous periods
 
-Para este projeto, o MAE é útil para entender o erro típico da previsão.
+In anomalous periods, the hybrid model delivered more relevant gains.
 
-### RMSE — Raiz do Erro Quadrático Médio
+The benchmark showed improvements around:
 
-O RMSE também mede erro de previsão, mas penaliza erros grandes com mais força.
+- **MAE improvement:** approximately `3.05%`
+- **RMSE improvement:** approximately `5.15%`
 
-Em termos práticos:
+This indicates that the anomaly-aware approach was most useful in the more difficult and unstable segments of the data.
 
-- ele dá mais peso a erros severos
-- é muito útil quando grandes erros são especialmente indesejáveis
-- ajuda a detectar se o modelo está tendo dificuldade em casos complexos
+### Explainability example
 
-Neste projeto, o RMSE é especialmente importante porque o modelo híbrido melhora de forma mais forte em períodos anômalos, onde grandes erros têm maior probabilidade de ocorrer.
+In one SHAP waterfall example, the hybrid model adjusted its forecast for a high-impact event:
 
-### R² — Coeficiente de Determinação
+- baseline prediction: approximately `781.09`
+- hybrid prediction: approximately `828.91`
+- actual value: `867.00`
+- error reduction: approximately `47.82` units
 
-O R² indica quanto da variância do alvo é explicada pelo modelo.
-
-Um R² muito alto é esperado aqui porque o projeto usa um conjunto rico de atributos gerados e um modelo forte baseado em árvores.  
-Ainda assim, o R² sozinho não é suficiente para comparar modelos neste contexto.  
-MAE e RMSE são mais informativos para entender a qualidade da previsão.
+This example illustrates how the hybrid model used recent demand deviation, order count, and other contextual signals to move the prediction closer to the observed value.
 
 ---
 
-## Forças Metodológicas
+# Technical Documentation
 
-Este projeto tem vários pontos fortes:
+## Data Loading and Persistence
 
-### 1. Estrutura clara de pipeline
-O trabalho não é uma exploração solta em notebook.  
-Ele segue uma sequência reproduzível do dado bruto até a avaliação.
+The first notebook converts the raw CSV dataset into **Parquet**, which is a practical engineering decision because it improves:
 
-### 2. Qualidade dos dados antes da modelagem
-O projeto valida regras antes da engenharia de atributos e do treinamento.
+- read performance
+- pipeline consistency
+- reproducibility across steps
+- easier reuse in downstream notebooks and APIs
 
-### 3. Design sensível ao tempo
-A divisão treino/teste respeita o tempo:
-
-- treino: 2021–2022
-- teste: 2023
-
-### 4. Consciência sobre leakage
-O modelo de anomalia também é treinado apenas no período histórico.
-
-### 5. Forte engenharia de atributos
-Sliding windows, razões, estatísticas móveis e sinais sensíveis ao contexto estão bem alinhados com a lógica de previsão.
-
-### 6. Arquitetura híbrida
-O projeto combina aprendizado não supervisionado e supervisionado de forma significativa.
-
-### 7. Explicabilidade
-O uso de SHAP torna o projeto mais robusto e mais fácil de defender tecnicamente.
-
-### 8. Benchmark orientado por segmento
-Comparar os modelos por grupo de anomalia é muito mais informativo do que comparar apenas uma métrica global.
+This step may look simple, but it is important because it turns the project into a more production-oriented workflow rather than a one-time notebook exploration.
 
 ---
 
-## Conclusão Final
+## Data Quality Validation
 
-Este projeto mostra que:
+Before building features or models, the project validates the processed dataset.
 
-- um modelo base forte de previsão já pode apresentar ótimo desempenho
-- adicionar consciência de anomalia não precisa melhorar todos os casos igualmente
-- o valor real do modelo híbrido aparece nos períodos mais difíceis, instáveis e incomuns
+### Data Quality Rules Checked
 
-O benchmark final indica que a combinação **Isolation Forest + LightGBM** é uma abordagem válida e tecnicamente defensável.
+The quality notebook evaluates validation rules such as:
 
-A conclusão mais importante não é apenas:
+- missing quantity
+- negative quantity
+- missing discount
+- negative discount
+- discount above one
+- invalid customer type
+- B2C discount rule violation
+- invalid order date
+- exact duplicate rows
+- total price consistency
 
-> “O modelo híbrido melhorou?”
+### Reported Result
 
-Mas sim:
+The quality report indicated:
 
-> “Onde ele melhorou, e por que isso importa?”
+| Metric | Value |
+|---|---:|
+| Rules evaluated | 10 |
+| Rules with issues found | 0 |
+| Total issue count | 0 |
+| High-severity issues | 0 |
 
-Neste projeto, a resposta é clara:
+### Interpretation
 
-- o modelo híbrido é especialmente útil em contextos anômalos
-- ele reduz o erro de forma mais significativa onde o problema é mais difícil
-- o SHAP confirma que o modelo se apoia em atributos temporais e contextuais coerentes
-- a arquitetura geral é consistente com um fluxo real de engenharia de ML
+This is an important foundation for the rest of the project.
+
+A forecasting model can only be trusted if the input data is trustworthy. By validating business rules before feature generation, the project reduces the risk of learning from invalid records or silent inconsistencies in the source data.
+
+---
+
+## Feature Engineering
+
+This stage is one of the strongest parts of the project.
+
+Instead of treating the problem as a generic tabular regression task, the notebook introduces time-aware and business-aware features that help the model understand demand behavior more realistically.
+
+### Main Engineered Features
+
+The project includes features such as:
+
+- `quantity_sum`
+- `total_price_sum`
+- `unit_price_mean`
+- `discount_mean`
+- `order_count`
+- `customer_count`
+- `avg_ticket`
+- `day_of_week`
+- `month`
+- `year`
+- `is_weekend`
+
+It also creates rolling and contextual features such as:
+
+- `quantity_sum_mean_7d`
+- `quantity_sum_std_7d`
+- `quantity_sum_sum_7d`
+- `total_price_sum_mean_7d`
+- `total_price_sum_std_7d`
+- `total_price_sum_mean_30d`
+- `unit_price_mean_mean_7d`
+- `discount_mean_mean_14d`
+- `quantity_vs_mean_7d`
+- `total_price_vs_mean_30d`
+- `quantity_pct_vs_mean_7d`
+- `history_less_than_7d`
+- `history_less_than_30d`
+
+### Why This Matters
+
+These features do more than summarize history. They give the model a notion of:
+
+- short-term behavior
+- dispersion and stability
+- recent demand acceleration or slowdown
+- relationship between current demand and recent local average
+- maturity of the historical window
+
+This is the type of feature engineering that allows tree-based models such as LightGBM to work well in time-aware regression problems.
+
+---
+
+## Sliding Window Logic
+
+A key technical idea in this project is the use of **sliding windows**.
+
+Instead of feeding the model only the current record, the project summarizes recent history into windows such as 7, 14, and 30 days. This makes it possible to convert a temporal problem into a feature-based supervised learning problem without ignoring the order of events.
+
+### Practical Interpretation
+
+The sliding window allows the model to answer questions like:
+
+- What was the average demand in the last 7 days?
+- How unstable was demand recently?
+- Is the current value above or below the recent normal level?
+- Is there enough past history to trust the statistics?
+
+### Technical Strength
+
+Without this step, LightGBM would receive mostly static columns and would not understand temporal context well.
+
+With sliding windows, the model gains a compact view of short-term dynamics and can better capture local demand behavior.
+
+This is one of the reasons the project is stronger than a simple “apply LightGBM to a dataset” exercise. The model is not relying on the algorithm alone. It is relying on a well-designed representation of time.
+
+---
+
+## Exploratory Analysis and Outlier Inspection
+
+The feature engineering notebook also includes exploratory visual analysis such as:
+
+- distribution analysis
+- boxplots
+- violin plots
+- IQR-based outlier inspection
+
+These analyses are useful because they show that the data was investigated before modeling and help justify why anomaly detection is meaningful in this dataset.
+
+The visual exploration suggests that sales quantity is not perfectly stable and that the data contains asymmetric behavior and unusually high observations. This provides a natural motivation for testing an anomaly-aware architecture.
+
+---
+
+## Design Rationale: Hybrid Model vs. Traditional Time-Series-Only Approach
+
+The project does not depend only on a traditional time-series model. Instead, it uses a feature-based machine learning approach with LightGBM and anomaly signals.
+
+This decision is defensible because the project focuses on:
+
+- operational drivers such as `order_count`, `customer_count`, and `discount_mean`
+- local recent behavior through sliding windows
+- product and region-specific patterns
+- anomaly-aware signals from Isolation Forest
+- explainability with SHAP
+
+### Important Note
+
+Prophet or other traditional forecasting models may still be useful as alternative baselines in future experiments. However, the current project is mainly designed to test whether a **hybrid anomaly-aware supervised learning pipeline** can reduce errors in unstable sales periods.
+
+### Conceptual Comparison
+
+| Aspect | Traditional time-series-only approach | Hybrid LightGBM + Isolation Forest approach |
+|---|---|---|
+| Main signal | Time-based trend and seasonality | Business features, rolling windows, and anomaly signals |
+| Outlier handling | May require explicit preprocessing or robust configuration | Uses anomaly indicators as model context |
+| Feature flexibility | More limited for complex business drivers | Can use operational, categorical, and temporal features |
+| Interpretability | Depends on model type | SHAP explains feature-level impact |
+| Best fit for this project | Useful as an additional benchmark | Central architecture being evaluated |
+
+---
+
+## Anomaly Detection with Isolation Forest
+
+The anomaly detection step trains an **Isolation Forest** model to detect unusual sales behavior.
+
+### Methodological Decision
+
+To avoid leakage, the anomaly model is trained only on the historical period:
+
+- **2021**
+- **2022**
+
+The year **2023** is left for testing.
+
+This is a good design choice because it preserves temporal realism.
+
+### Best Parameters Reported
+
+The notebook reports the following best parameters for Isolation Forest:
+
+| Parameter | Value |
+|---|---:|
+| `contamination` | `0.01` |
+| `max_features` | `1.0` |
+| `max_samples` | `512` |
+| `n_estimators` | `100` |
+
+### Generated Anomaly Signals
+
+The anomaly detection stage produces features such as:
+
+- `anomaly_score`
+- `anomaly_flag`
+
+These features are later injected into the hybrid LightGBM model.
+
+### Why This Is Useful
+
+Isolation Forest is not used as the final predictive model. It is used as a **context detector**.
+
+The architectural idea is:
+
+```text
+unsupervised model detects unusual contexts
+        +
+supervised model uses those signals for forecasting
+```
+
+This is a strong design choice because it combines two different modeling perspectives in a complementary way.
+
+---
+
+## Baseline Forecasting Model
+
+The baseline notebook trains a **LightGBM regressor** using only the engineered business and temporal features.
+
+### Baseline Features Used
+
+The baseline model uses:
+
+- business aggregates
+- calendar features
+- rolling-window statistics
+- ratio and context features
+- categorical identifiers such as `Product` and `Region`
+
+### Reported Baseline Metrics
+
+| Metric | Value |
+|---|---:|
+| MAE | `2.7275` |
+| RMSE | `4.1588` |
+| R² | `0.999305` |
+
+### Interpretation
+
+These values indicate that the baseline model is already very strong.
+
+A strong baseline is important because it creates a fair point of comparison for the hybrid model. The objective is not to show that the baseline is weak, but to verify whether anomaly signals add value in more difficult contexts.
+
+---
+
+## Hybrid Forecasting Model
+
+The hybrid notebook trains another **LightGBM regressor**, but now with additional anomaly-related inputs such as:
+
+- `anomaly_score`
+- `anomaly_flag`
+
+This means the model receives both:
+
+- the normal structured sales context
+- a signal about whether the current context looks unusual
+
+### Reported Hybrid Notebook Metrics
+
+| Metric | Value |
+|---|---:|
+| MAE | `2.7463` |
+| RMSE | `4.1904` |
+| R² | `0.999295` |
+
+### Important Interpretation Note
+
+These metrics should not be interpreted in isolation because the project later performs a more detailed comparison split by anomaly condition and train/test context.
+
+The most important conclusion of the project comes from the dedicated benchmarking step, where the two models are compared by anomaly group.
+
+---
+
+## Performance Benchmarking
+
+This notebook provides the most meaningful final evaluation.
+
+Instead of comparing only one global metric, the project evaluates both models by **anomaly group**:
+
+- `anomaly_flag = 0`: normal periods
+- `anomaly_flag = 1`: anomalous periods
+
+This is important because the hybrid approach is expected to help especially when the sales behavior is unusual.
+
+---
+
+## Train-Side Comparison by Anomaly Group
+
+| anomaly_flag | count | baseline_mae | hybrid_mae | baseline_rmse | hybrid_rmse | mae_improvement_pct | rmse_improvement_pct |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 543,470 | 2.6905 | 2.6947 | 3.9699 | 3.9670 | -0.1557% | 0.0736% |
+| 1 | 5,490 | 6.3946 | 6.2201 | 13.0114 | 12.3144 | 2.7286% | 5.3573% |
+
+### Interpretation
+
+This result is revealing:
+
+- In **normal cases** (`anomaly_flag = 0`), the hybrid model behaves almost the same as the baseline.
+- In **anomalous cases** (`anomaly_flag = 1`), the hybrid model shows a clearer improvement.
+
+This is the expected behavior. The anomaly features do not radically distort the model in normal periods. Instead, they become more useful when the context is unstable.
+
+---
+
+## Test-Side Comparison by Anomaly Group
+
+![Baseline vs Hybrid comparison](img/Baseline_x_Hybrid.png)
+
+| anomaly_flag | count | baseline_mae | hybrid_mae | baseline_rmse | hybrid_rmse | mae_improvement_pct | rmse_improvement_pct |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 271,161 | 2.774 | 2.773 | 4.285 | 4.258 | 0.05% | 0.64% |
+| 1 | 2,566 | 3.516 | 3.409 | 7.931 | 7.522 | 3.05% | 5.15% |
+
+### Interpretation
+
+In normal periods, both models behave very similarly. The hybrid model is slightly better, but the gain is modest. This is expected because stable periods are easier and the baseline model already performs well.
+
+In anomalous periods, the hybrid model performs more clearly better than the baseline model:
+
+- MAE decreases from `3.516` to `3.409`
+- RMSE decreases from `7.931` to `7.522`
+- Max absolute error decreases from approximately `263.094` to `245.972`
+
+This suggests that anomaly-related information adds useful signal exactly where the forecasting problem is more complex.
+
+### Business Meaning
+
+The hybrid model does not need to improve every prediction dramatically to be useful.
+
+Its main value is reducing error in unstable periods, where bad predictions can be more costly for sales planning, replenishment, and monitoring.
+
+---
+
+## Why the Hybrid Model Matters
+
+A fair question is:
+
+> If the overall gain is not huge, why is the hybrid model important?
+
+Because in many real business problems, the main value does not come from making already-stable cases slightly better.
+
+It comes from reducing error when behavior becomes abnormal.
+
+This project shows that pattern:
+
+- stable periods: nearly equivalent performance
+- unstable periods: better control of error with anomaly-aware modeling
+
+That makes the hybrid model strategically valuable.
+
+---
+
+## SHAP Interpretability Analysis
+
+The project uses **SHAP** to understand the hybrid model.
+
+This is an important step because once anomaly features are introduced, it becomes necessary to explain whether they are influencing the model and how they interact with other predictors.
+
+![SHAP dependence plot](img/Dependence_plot01.png)
+
+### Most Relevant Features Reported
+
+The SHAP analysis highlights features such as:
+
+- `numeric__quantity_vs_mean_7d`
+- `numeric__quantity_sum_mean_7d`
+- `numeric__quantity_pct_vs_mean_7d`
+- `numeric__order_count`
+- `numeric__total_price_vs_mean_30d`
+- `numeric__customer_count`
+- `numeric__anomaly_score`
+
+### Interpretation
+
+This feature ranking is coherent with the business logic of the project.
+
+The model is mostly driven by:
+
+- deviation from recent behavior
+- recent local demand level
+- order intensity
+- customer concentration
+- context relative to short and medium historical windows
+
+This is a good sign because it shows the model is learning meaningful demand structure rather than relying on arbitrary noise.
+
+---
+
+## SHAP Waterfall Example
+
+![SHAP waterfall plot](img/Waterfall_plot.png)
+
+The waterfall plot explains how the hybrid model adjusted its forecast for a specific high-impact event.
+
+Starting from a lower expected value, the model used several signals to reach a final prediction closer to the actual value.
+
+Reported example:
+
+| Item | Value |
+|---|---:|
+| Baseline prediction | `781.09` |
+| Hybrid prediction | `828.91` |
+| Actual value | `867.00` |
+| Error reduction | `47.82` units |
+
+This example illustrates that the hybrid model can react better to unusual behavior that a standard model may partially miss.
+
+The main point is not that every prediction will behave this way, but that SHAP helps explain **why** the hybrid model changed the forecast in a specific case.
+
+---
+
+## Interpretation of the Main Metrics
+
+### MAE — Mean Absolute Error
+
+MAE measures the average absolute difference between prediction and actual value.
+
+In practical terms:
+
+- it tells how far the forecast is from reality on average
+- it is easy to interpret
+- it is less sensitive to extreme errors than RMSE
+
+For this project, MAE is useful to understand the typical forecast error.
+
+---
+
+### RMSE — Root Mean Squared Error
+
+RMSE also measures prediction error, but penalizes large mistakes more strongly.
+
+In practical terms:
+
+- it gives more weight to severe errors
+- it is useful when large misses are especially undesirable
+- it helps detect whether the model is struggling with difficult cases
+
+In this project, RMSE is especially important because the hybrid model improves more strongly in anomalous periods, where larger errors are more likely to happen.
+
+---
+
+### R² — Coefficient of Determination
+
+R² indicates how much of the target variance is explained by the model.
+
+A very high R² is expected here because the project uses a rich set of engineered features and a strong tree-based model.
+
+However, R² alone is not enough to compare models in this context. MAE and RMSE are more informative for understanding forecast quality, especially when comparing performance in anomalous periods.
+
+---
+
+## Business Interpretation
+
+The project shows that the value of the hybrid model is not necessarily in improving every prediction dramatically.
+
+Its main value is reducing error in unstable periods, where bad predictions can be more costly for business decisions.
+
+In a real sales planning context, this type of approach could support questions such as:
+
+- Is demand increasing unusually in a specific region?
+- Is a product showing behavior that differs from its recent history?
+- Should stock planning pay more attention to this product-region combination?
+- Are the largest forecast errors concentrated in anomalous situations?
+
+The project should be presented as a **sales intelligence and forecasting pipeline**, not as a complete inventory optimization system.
+
+---
+
+## Methodological Strengths
+
+This project has several strong points:
+
+### 1. Clear Pipeline Structure
+
+The work is not a loose notebook exploration. It follows a reproducible sequence from raw data to evaluation.
+
+### 2. Data Quality Before Modeling
+
+The project validates business and consistency rules before feature engineering and training.
+
+### 3. Time-Aware Design
+
+The train/test split respects time:
+
+- train: 2021–2022
+- test: 2023
+
+### 4. Leakage Awareness
+
+The anomaly model is also trained only on the historical period.
+
+### 5. Strong Feature Engineering
+
+Sliding windows, ratios, rolling statistics, and context-aware signals are aligned with forecasting logic.
+
+### 6. Hybrid Architecture
+
+The project combines unsupervised and supervised learning in a meaningful way.
+
+### 7. Explainability
+
+The use of SHAP makes the project more robust and easier to defend technically.
+
+### 8. Segment-Aware Benchmarking
+
+Comparing the models by anomaly group is more informative than comparing only one global metric.
+
+---
+
+## Limitations and Possible Improvements
+
+This project is technically defensible, but it can still evolve.
+
+Possible next steps include:
+
+- adding an alternative baseline such as Prophet, SARIMA, XGBoost, or CatBoost
+- testing additional anomaly detection methods such as Local Outlier Factor or Autoencoders
+- using MLflow or another experiment tracking tool
+- adding automated model validation before promoting a model to the API layer
+- adding monitoring for data drift and prediction error over time
+- creating a clearer deployment flow from notebook artifacts to API artifacts
+
+These improvements would make the project closer to a production-grade ML system.
+
+---
+
+## Final Conclusion
+
+This project shows that:
+
+- a strong baseline forecasting model can already perform very well
+- adding anomaly awareness does not need to improve every case equally
+- the real value of the hybrid model appears in more difficult, unstable, and unusual periods
+
+The final benchmark indicates that the **Isolation Forest + LightGBM** combination is a valid and technically defensible approach.
+
+---
+
+
 
