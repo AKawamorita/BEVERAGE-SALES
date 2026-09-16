@@ -91,7 +91,9 @@ The project is organized as a notebook-based pipeline.
 | 6 | `06_HybridModel.ipynb` | Trains the hybrid LightGBM model with anomaly signals |
 | 7 | `07_Interpretability_SHAP_Analysis.ipynb` | Explains the hybrid model using SHAP |
 | 8 | `08_performance_benchmarking.ipynb` | Compares baseline vs. hybrid performance |
+| 9 | `09_ARIMA_LightGBM_comparison.ipynb`| Compares baseline vs. hybrid performance vs. ARIMA *|
 
+* Project status: Documentation and experimental results are available. Source code and reproducibility notebooks are being prepared for publication.
 ---
 
 ## Export to API Project

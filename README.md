@@ -57,6 +57,8 @@ The project was organized as a notebook pipeline. The recommended execution orde
 6. 06_Hybrid_Model.ipynb
 7. 07_Interpretability_SHAP_Analysis.ipynb
 8. 08_performance_benchmarking.ipynb
+9. 09_ARIMA_LightGBM_comparison.ipynb
+(*) Project status: Documentation and experimental results are available. Source code and reproducibility notebooks are being prepared for publication.
 
 ---
 
@@ -337,75 +339,67 @@ This project demonstrates:
 
 ---
 
-## Suggested LinkedIn Skills
+## ARIMA X LightGBMRegressor X LightGBMRegressor + Isolation Forest 
 
-Based on what was actually built, these are the strongest and most honest skills to highlight on LinkedIn.
+## Model Comparison
 
-### High-impact skills
-- Machine Learning
-- Python
-- Feature Engineering
-- Anomaly Detection
-- Time Series Analysis
-- Predictive Modeling
-- Scikit-learn
-- Pandas
-- Data Analysis
-- Data Visualization
+![Explained comparison between ARIMA, LightGBM, and LightGBM with Isolation Forest](Forecast_ARIMA.png)
 
-### Strong supporting skills
-- Exploratory Data Analysis
-- Statistical Data Analysis
-- Model Evaluation
-- Business Analytics
-- Sales Analytics
-- Outlier Detection
-- Data Quality
-- Technical Documentation
+The models were compared at the same aggregation level, using the same target variable and over the same test period in 2023. The evaluation used **rolling one-step-ahead** forecasting, where each prediction incorporates the observed history up to the immediately preceding moment.
 
-### Good options for an ML Engineer positioning
-- Machine Learning Engineering
-- ML Pipelines
-- Model Benchmarking
-- Applied Machine Learning
-- Reusable Data Components
+| Model | Approx. MAE | Approx. RMSE | Result Interpretation |
+|---|---:|---:|---|
+| ARIMA | 135 | 171 | Slight numerical advantage |
+| LightGBM baseline | 136 | 172 | Practically equivalent performance |
+| LightGBM + Isolation Forest | 136 | 172 | Marginal gain compared to baseline |
 
----
+> The values in the table are rounded according to the comparison chart. In the technical report, the full values exported by the evaluation pipeline should be used.
 
-## Suggested LinkedIn Skill Order
+## Main Conclusion
 
-A strong order could be:
+The experiment did not show a clear superiority of LightGBM over ARIMA. The results represent a **technical tie**, with a minor numerical advantage for the statistical model.
 
-1. Machine Learning
-2. Python
-3. Feature Engineering
-4. Anomaly Detection
-5. Time Series Analysis
-6. Predictive Modeling
-7. Scikit-learn
-8. Pandas
-9. Data Analysis
-10. Data Visualization
-11. Exploratory Data Analysis
-12. Statistical Data Analysis
-13. Business Analytics
-14. Model Evaluation
-15. Technical Documentation
+This behavior aligns with the dataset's characteristics. Since there are few external variables to explain demand changes, the models rely mainly on their own sales history. In this scenario, a relatively simple autoregressive model can be just as competitive as a more flexible Machine Learning approach.
 
----
+The result highlights an important lesson: **increasing model complexity does not guarantee better forecasts when the data does not provide enough explanatory signal**.
 
-## Final Notes
+## How Seasonality Was Represented
 
-This project is valuable for a portfolio because it shows more than model training.
+LightGBM does not have a native seasonal component like a statistical seasonal model. Part of the time patterns was represented through feature engineering, including:
 
-It demonstrates:
+- Lagged values, always created with `shift(1)` to avoid data leakage;
+- 7-day and 30-day rolling means, standard deviations, and sums;
+- Calendar variables, such as week, month, and weekend flags;
+- Relationships between current observations and recent historical behavior;
+- Average price and discount information across time windows.
 
-- data preparation
-- practical feature engineering
-- anomaly reasoning
-- structured experimentation
-- model comparison
-- business interpretation
-- technical communication
+These features allow the model to capture weekly and monthly patterns indirectly. However, the project does not claim to explicitly model a robust annual seasonality. Doing so would require more historical cycles, features like `lag_365` or Fourier terms, and an additional comparison with SARIMA under the exact same time protocol.
+
+## Why LightGBM Remains Relevant
+
+Even without outperforming ARIMA in this setup, LightGBM provides a strong foundation for future project developments:
+
+- Inclusion of price, discounts, marketing campaigns, holidays, weather, events, and stockouts;
+- Learning non-linear interactions and relationships;
+- Forecast explainability using SHAP;
+- Segmented analysis by product, customer, or period;
+- Integration with the anomaly detection phase;
+- Model deployment via API and consumption by analytics applications.
+
+Therefore, choosing LightGBM should not be justified only by current global metrics, but by its capacity to evolve into a multivariate and explainable forecasting model as new data sources are added.
+
+## Role of Isolation Forest
+
+Isolation Forest was used to identify atypical observations and provide additional signals to the forecasting model. In the overall evaluation, its inclusion led to only a marginal change compared to the LightGBM baseline.
+
+This does not necessarily mean the step is useless. Its utility should also be evaluated on subsets classified as anomalous, checking if error reduction occurs specifically during periods of high instability. This segmented analysis provides more insight than expecting a large change in the global average.
+
+## Known Limitations
+
+- Few external variables related to real demand drivers;
+- Lack of data on campaigns, local holidays, weather, competition, inventory, and stockouts;
+- Limited history to estimate annual seasonality reliably;
+- `One-step-ahead` evaluation, which does not fully represent long-term horizons without updates;
+- Small differences between models, which need confirmation through error analysis by period and, ideally, statistical testing.
 
 
